@@ -10,23 +10,53 @@ package distsys.smartmed.server;
  */
 
 import com.healthcare.grpc.patient.*;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 public class PatientServiceImpl extends PatientServiceGrpc.PatientServiceImplBase {
+    
     @Override
-    public void getPatientRecord(PatientRequest request, StreamObserver<PatientResponse> responseObserver) {
+    public void getPatientRecord(PatientRequest request, 
+                               StreamObserver<PatientResponse> responseObserver) {
         String patientId = request.getPatientId();
-        System.out.println("[SmartMed] Fetching record for patient: " + patientId);
+        
+        try {
+            // Validate ID is numeric and between 1-100
+            int id = Integer.parseInt(patientId);
+            if (id < 1 || id > 100) {
+                responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("ID must be 1-100")
+                    .asRuntimeException());
+                return;
+            }
+            
+            // Generate or fetch patient record
+            PatientResponse response = generatePatientRecord(patientId);
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+            
+        } catch (NumberFormatException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                .withDescription("Invalid patient ID format")
+                .asRuntimeException());
+        }
+    }
+    
+    private PatientResponse generatePatientRecord(String patientId) {
+        String[] firstNames = {"John", "Jane", "Robert", "Emily"};
+        String[] lastNames = {"Smith", "Johnson", "Williams", "Brown"};
+        String[] conditions = {"Hypertension", "Diabetes", "Asthma"};
+        String[] medications = {"Metformin", "Lisinopril", "Ibuprofen"};
 
-        PatientResponse response = PatientResponse.newBuilder()
+        int hash = patientId.hashCode();
+        String name = firstNames[Math.abs(hash) % firstNames.length] + " " + 
+                     lastNames[Math.abs(hash/31) % lastNames.length];
+        
+        return PatientResponse.newBuilder()
             .setPatientId(patientId)
-            .setName("John Doe")
-            .addMedicalHistory("Hypertension (2022)")
-            .addMedicalHistory("Diabetes (2021)")
-            .setCurrentMedication("Metformin, Lisinopril")
+            .setName(name)
+            .setCurrentMedication(medications[Math.abs(hash) % medications.length])
+            .addMedicalHistory(conditions[Math.abs(hash) % conditions.length] + " (2023)")
             .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
     }
 }

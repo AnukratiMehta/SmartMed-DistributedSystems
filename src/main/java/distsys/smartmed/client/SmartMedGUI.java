@@ -8,7 +8,6 @@ package distsys.smartmed.client;
  *
  * @author anukratimehta
  */
-
 import com.healthcare.grpc.consultation.*;
 import com.healthcare.grpc.diagnostic.*;
 import com.healthcare.grpc.monitoring.*;
@@ -24,11 +23,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class SmartMedGUI extends javax.swing.JFrame {
+
     private ManagedChannel channel;
 
     public SmartMedGUI() {
         initComponents();
         initializeGRPCChannel();
+        idField.requestFocusInWindow();
     }
 
     private void initializeGRPCChannel() {
@@ -36,7 +37,6 @@ public class SmartMedGUI extends javax.swing.JFrame {
                 .usePlaintext()
                 .build();
     }
-
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -51,6 +51,10 @@ public class SmartMedGUI extends javax.swing.JFrame {
         monitoringBtn = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         resultArea = new javax.swing.JTextArea();
+        diagnosticBtn = new javax.swing.JButton();
+        consultationBtn = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        idField = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -72,54 +76,98 @@ public class SmartMedGUI extends javax.swing.JFrame {
         resultArea.setRows(5);
         jScrollPane1.setViewportView(resultArea);
 
+        diagnosticBtn.setText("Upload Image");
+
+        consultationBtn.setText("LiveConsultation");
+
+        jLabel1.setText("Patient Id:");
+
+        idField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                idFieldActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(patientBtn)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 142, Short.MAX_VALUE)
-                .addComponent(monitoringBtn)
-                .addGap(20, 20, 20))
             .addComponent(jScrollPane1)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(20, 20, 20)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel1)
+                    .addComponent(diagnosticBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(patientBtn))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 93, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(consultationBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(monitoringBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addComponent(idField))
+                .addGap(20, 20, 20))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(patientBtn)
-                    .addComponent(monitoringBtn))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 265, Short.MAX_VALUE))
+                    .addComponent(jLabel1)
+                    .addComponent(idField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(monitoringBtn)
+                    .addComponent(patientBtn))
+                .addGap(9, 9, 9)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(consultationBtn)
+                    .addComponent(diagnosticBtn))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-     private void log(String message) {
+    private void log(String message) {
         resultArea.append(message + "\n");
         resultArea.setCaretPosition(resultArea.getDocument().getLength());
     }
-     
+
     private void patientBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_patientBtnActionPerformed
         // TODO add your handling code here:
+        String patientId = idField.getText().trim();
+
+        // Input validation
+        try {
+            int id = Integer.parseInt(patientId);
+            if (id < 1 || id > 100) {
+                log("\nError: Patient ID must be between 1-100");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            log("\nError: Please enter a number 1-100");
+            return;
+        }
+
         new Thread(() -> {
             try {
-                log("\n=== Fetching Patient Record ===");
-                PatientServiceGrpc.PatientServiceBlockingStub stub = 
-                    PatientServiceGrpc.newBlockingStub(channel);
+                log("\nFetching record for patient: " + patientId);
 
-                PatientResponse response = stub.getPatientRecord(
-                    PatientRequest.newBuilder().setPatientId("patient-123").build());
+                PatientResponse response = PatientServiceGrpc.newBlockingStub(channel)
+                        .getPatientRecord(PatientRequest.newBuilder()
+                                .setPatientId(patientId)
+                                .build());
 
-                log("Patient ID: " + response.getPatientId());
+                // Display REAL response from server
                 log("Name: " + response.getName());
-                log("Current Medication: " + response.getCurrentMedication());
-                log("Medical History: " + response.getMedicalHistoryList());
-            } catch (Exception ex) {
-                log("Error fetching patient record: " + ex.getMessage());
+                log("Medication: " + response.getCurrentMedication());
+                log("History: " + response.getMedicalHistoryList());
+
+            } catch (Exception e) {
+                log("Error: " + e.getMessage());
             }
         }).start();
     }//GEN-LAST:event_patientBtnActionPerformed
@@ -131,35 +179,35 @@ public class SmartMedGUI extends javax.swing.JFrame {
                 log("\n=== Starting Vitals Monitoring ===");
                 CountDownLatch latch = new CountDownLatch(1);
 
-                MonitoringServiceGrpc.MonitoringServiceStub stub = 
-                    MonitoringServiceGrpc.newStub(channel);
+                MonitoringServiceGrpc.MonitoringServiceStub stub
+                        = MonitoringServiceGrpc.newStub(channel);
 
                 stub.streamVitals(
-                    VitalsRequest.newBuilder()
-                        .setPatientId("patient-123")
-                        .setDurationSeconds(10) // Monitor for 10 seconds
-                        .build(),
-                    new StreamObserver<VitalsUpdate>() {
-                        @Override
-                        public void onNext(VitalsUpdate update) {
-                            log(String.format("Heart Rate: %d | Oxygen: %.1f%% | Time: %tT",
+                        VitalsRequest.newBuilder()
+                                .setPatientId("patient-123")
+                                .setDurationSeconds(10) // Monitor for 10 seconds
+                                .build(),
+                        new StreamObserver<VitalsUpdate>() {
+                    @Override
+                    public void onNext(VitalsUpdate update) {
+                        log(String.format("Heart Rate: %d | Oxygen: %.1f%% | Time: %tT",
                                 update.getHeartRate(),
                                 update.getOxygenLevel(),
                                 update.getTimestamp()));
-                        }
+                    }
 
-                        @Override
-                        public void onError(Throwable t) {
-                            log("Monitoring error: " + t.getMessage());
-                            latch.countDown();
-                        }
+                    @Override
+                    public void onError(Throwable t) {
+                        log("Monitoring error: " + t.getMessage());
+                        latch.countDown();
+                    }
 
-                        @Override
-                        public void onCompleted() {
-                            log("Monitoring session ended");
-                            latch.countDown();
-                        }
-                    });
+                    @Override
+                    public void onCompleted() {
+                        log("Monitoring session ended");
+                        latch.countDown();
+                    }
+                });
 
                 latch.await();
             } catch (Exception ex) {
@@ -167,6 +215,48 @@ public class SmartMedGUI extends javax.swing.JFrame {
             }
         }).start();
     }//GEN-LAST:event_monitoringBtnActionPerformed
+
+    private void idFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_idFieldActionPerformed
+        // TODO add your handling code here:
+        String patientId = idField.getText().trim();
+
+    // Client-side validation
+    try {
+        int idNum = Integer.parseInt(patientId);
+        if (idNum < 1 || idNum > 100) {
+            log("\nError: Patient ID must be between 1-100");
+            return;
+        }
+    } catch (NumberFormatException e) {
+        log("\nError: Patient ID must be a number (1-100)");
+        return;
+    }
+
+    new Thread(() -> {
+        try {
+            log("\n=== Fetching Record for Patient: " + patientId + " ===");
+            PatientServiceGrpc.PatientServiceBlockingStub stub = 
+                PatientServiceGrpc.newBlockingStub(channel);
+
+            // Get response from server (no client-side generation)
+            PatientResponse response = stub.getPatientRecord(
+                PatientRequest.newBuilder()
+                    .setPatientId(patientId)
+                    .build());
+
+            // Server will always return a valid response or error
+            log("Patient ID: " + response.getPatientId());
+            log("Name: " + response.getName());
+            log("Current Medication: " + response.getCurrentMedication());
+            log("Medical History: " + response.getMedicalHistoryList());
+            
+        } catch (io.grpc.StatusRuntimeException e) {
+            log("Server Error: " + e.getStatus().getDescription());
+        } catch (Exception ex) {
+            log("Error: " + ex.getMessage());
+        }
+    }).start();
+    }//GEN-LAST:event_idFieldActionPerformed
 
     /**
      * @param args the command line arguments
@@ -214,6 +304,10 @@ public class SmartMedGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton consultationBtn;
+    private javax.swing.JButton diagnosticBtn;
+    private javax.swing.JTextField idField;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton monitoringBtn;
     private javax.swing.JButton patientBtn;
