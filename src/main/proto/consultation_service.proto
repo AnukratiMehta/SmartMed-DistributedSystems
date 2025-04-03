@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package healthcare;
+
+option java_multiple_files = true;
+option java_package = "com.healthcare.grpc.consultation";
+option java_outer_classname = "ConsultationServiceProto";
+
+service ConsultationService {
+  rpc LiveConsultation (stream ConsultationMessage) returns (stream ConsultationMessage);
+}
+
+message ConsultationMessage {
+  string sender_id = 1;
+  string text = 2;
+  int64 timestamp = 3;
+}

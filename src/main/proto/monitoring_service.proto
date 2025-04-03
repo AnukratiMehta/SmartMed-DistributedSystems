@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package healthcare;
+
+option java_multiple_files = true;
+option java_package = "com.healthcare.grpc.monitoring";
+option java_outer_classname = "MonitoringServiceProto";
+
+service MonitoringService {
+  rpc StreamVitals (VitalsRequest) returns (stream VitalsUpdate);
+}
+
+message VitalsRequest {
+  string patient_id = 1;
+  int32 duration_seconds = 2;
+}
+
+message VitalsUpdate {
+  int32 heart_rate = 1;
+  float oxygen_level = 2;
+  int64 timestamp = 3;
+}

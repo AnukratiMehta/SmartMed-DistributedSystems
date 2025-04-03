@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package healthcare;
+
+option java_multiple_files = true;
+option java_package = "com.healthcare.grpc.patient";
+option java_outer_classname = "PatientServiceProto";
+
+service PatientService {
+  rpc GetPatientRecord (PatientRequest) returns (PatientResponse);
+}
+
+message PatientRequest {
+  string patient_id = 1;
+}
+
+message PatientResponse {
+  string patient_id = 1;
+  string name = 2;
+  repeated string medical_history = 3;
+  string current_medication = 4;
+}
