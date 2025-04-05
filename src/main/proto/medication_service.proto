@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package healthcare;
+
+option java_multiple_files = true;
+option java_package = "com.healthcare.grpc.medication";
+option java_outer_classname = "MedicationServiceProto";
+
+service MedicationService {
+  rpc AnalyzeMedicationSchedule (stream MedicationRecord) returns (MedicationAnalysis);
+}
+
+message MedicationRecord {
+  string patient_id = 1;
+  string medication_name = 2;
+  float dosage_mg = 3;
+  string scheduled_time = 4;  // "HH:MM" format
+  bool was_taken = 5;
+  string actual_time_taken = 6; // "HH:MM" if taken, empty otherwise
+}
+
+message MedicationAnalysis {
+  float adherence_percentage = 1;  // 0.0 to 100.0
+  int32 total_doses = 2;
+  int32 taken_doses = 3;
+  repeated MedicationRecord missed_doses = 4;
+  string summary = 5;
+}

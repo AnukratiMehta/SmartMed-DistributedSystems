@@ -10,9 +10,9 @@ package distsys.smartmed.client;
  */
 
 import com.healthcare.grpc.consultation.*;
-import com.healthcare.grpc.diagnostic.*;
 import com.healthcare.grpc.monitoring.*;
 import com.healthcare.grpc.patient.*;
+import com.healthcare.grpc.medication.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -24,8 +24,8 @@ public class SmartMedClient {
     private final ManagedChannel channel;
     private final PatientServiceGrpc.PatientServiceBlockingStub patientStub;
     private final MonitoringServiceGrpc.MonitoringServiceStub monitoringStub;
-    private final DiagnosticServiceGrpc.DiagnosticServiceStub diagnosticStub;
     private final ConsultationServiceGrpc.ConsultationServiceStub consultationStub;
+    private final MedicationServiceGrpc.MedicationServiceStub medicationStub;
 
     public SmartMedClient(String host, int port) {
         this.channel = ManagedChannelBuilder.forAddress(host, port)
@@ -33,8 +33,8 @@ public class SmartMedClient {
             .build();
         this.patientStub = PatientServiceGrpc.newBlockingStub(channel);
         this.monitoringStub = MonitoringServiceGrpc.newStub(channel);
-        this.diagnosticStub = DiagnosticServiceGrpc.newStub(channel);
         this.consultationStub = ConsultationServiceGrpc.newStub(channel);
+        this.medicationStub = MedicationServiceGrpc.newStub(channel);
     }
 
     public void shutdown() throws InterruptedException {
@@ -52,6 +52,7 @@ public class SmartMedClient {
         System.out.println("Patient Record Received:");
         System.out.println("ID: " + response.getPatientId());
         System.out.println("Name: " + response.getName());
+        System.out.println("Age: " + response.getAge());
         System.out.println("Medication: " + response.getCurrentMedication());
         System.out.println("Medical History: " + response.getMedicalHistoryList());
     }
@@ -91,46 +92,76 @@ public class SmartMedClient {
         latch.await();
     }
 
-    // 3. Test Client Streaming (Medical Imaging)
-//    public void testDiagnosticService() throws InterruptedException {
-//        System.out.println("\n=== Testing Diagnostic Service ===");
-//        CountDownLatch latch = new CountDownLatch(1);
-//
-//        StreamObserver<ImageChunk> requestObserver = diagnosticStub.uploadMedicalImage(
-//            new StreamObserver<UploadStatus>() {
-//                @Override
-//                public void onNext(UploadStatus status) {
-//                    System.out.println("Upload Status: " + status.getMessage());
-//                    System.out.println("Image ID: " + status.getImageId());
-//                }
-//
-//                @Override
-//                public void onError(Throwable t) {
-//                    System.err.println("Upload Failed: " + t.getMessage());
-//                    latch.countDown();
-//                }
-//
-//                @Override
-//                public void onCompleted() {
-//                    System.out.println("Upload completed");
-//                    latch.countDown();
-//                }
-//            });
-//
-//        // Simulate sending 5 chunks
-//        String imageId = "img-" + System.currentTimeMillis();
-//        for (int i = 1; i <= 5; i++) {
-//            ImageChunk chunk = ImageChunk.newBuilder()
-//                .setImageId(imageId)
-//                .setChunkNumber(i)
-//                .setImageData(("chunk-data-" + i).getBytes())
-//                .build();
-//            requestObserver.onNext(chunk);
-//            Thread.sleep(500); // Simulate delay between chunks
-//        }
-//        requestObserver.onCompleted();
-//        latch.await();
-//    }
+//3. Test Client Stream (Medication)
+public void testMedicationService(String patientId) throws InterruptedException {
+    System.out.println("\n=== Testing Medication Service ===");
+    CountDownLatch latch = new CountDownLatch(1);
+
+    StreamObserver<MedicationRecord> requestObserver = medicationStub.analyzeMedicationSchedule(
+        new StreamObserver<MedicationAnalysis>() {
+            @Override
+            public void onNext(MedicationAnalysis analysis) {
+                System.out.println("\n=== Server Analysis Received ===");
+                System.out.printf("Adherence: %.1f%%\n", analysis.getAdherencePercentage());
+                System.out.println("Doses Taken: " + analysis.getTakenDoses() + 
+                                 "/" + analysis.getTotalDoses());
+                System.out.println("Summary: " + analysis.getSummary());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                System.err.println("Error: " + t.getMessage());
+                latch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+                System.out.println("Medication analysis completed");
+                latch.countDown();
+            }
+        });
+
+    // Simulate medication records
+    MedicationRecord record1 = MedicationRecord.newBuilder()
+        .setPatientId(patientId)
+        .setMedicationName("Ibuprofen")
+        .setDosageMg(400)
+        .setScheduledTime("08:00")
+        .setWasTaken(true)
+        .setActualTimeTaken("08:23")
+        .build();
+        
+    MedicationRecord record2 = MedicationRecord.newBuilder()
+        .setPatientId(patientId)
+        .setMedicationName("Ibuprofen")
+        .setDosageMg(400)
+        .setScheduledTime("20:00")
+        .setWasTaken(false)
+        .setActualTimeTaken("")
+        .build();
+        
+    MedicationRecord record3 = MedicationRecord.newBuilder()
+        .setPatientId(patientId)
+        .setMedicationName("Vitamin D")
+        .setDosageMg(1000)
+        .setScheduledTime("12:00")
+        .setWasTaken(true)
+        .setActualTimeTaken("12:47")
+        .build();
+
+    requestObserver.onNext(record1);
+    requestObserver.onNext(record2);
+    requestObserver.onNext(record3);
+    
+    requestObserver.onCompleted();
+    latch.await();
+}
+    private String getCurrentTimestamp() {
+        return java.time.LocalDateTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
+
+
 //
 //    // 4. Test Bi-directional Streaming (Consultation)
 //    public void testConsultationService() throws InterruptedException {
@@ -178,14 +209,15 @@ public class SmartMedClient {
 //        latch.await();
 //    }
 
+
     public static void main(String[] args) throws Exception {
         SmartMedClient client = new SmartMedClient("localhost", 50051);
         
         try {
             // Test all services
-            client.testPatientService("patient-123");
-            client.testMonitoringService("patient-123", 5); // 5 seconds of vitals
-//            client.testDiagnosticService();
+            client.testPatientService("12");
+            client.testMonitoringService("12", 5); // 5 seconds of vitals
+        client.testMedicationService("12");
 //            client.testConsultationService();
         } finally {
             client.shutdown();

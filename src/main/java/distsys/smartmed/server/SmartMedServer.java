@@ -19,7 +19,7 @@ public class SmartMedServer {
         Server server = ServerBuilder.forPort(port)
             .addService(new PatientServiceImpl())
             .addService(new MonitoringServiceImpl())
-//            .addService(new DiagnosticServiceImpl())
+            .addService(new MedicationServiceImpl())
 //            .addService(new ConsultationServiceImpl())
             .build();
 
@@ -28,7 +28,7 @@ public class SmartMedServer {
         System.out.println("[SmartMed] Services registered:");
         System.out.println("- Patient Records");
         System.out.println("- Vitals Monitoring"); 
-//        System.out.println("- Medical Imaging");
+        System.out.println("- Medical Imaging");
 //        System.out.println("- Live Consultation");
 
         server.awaitTermination();

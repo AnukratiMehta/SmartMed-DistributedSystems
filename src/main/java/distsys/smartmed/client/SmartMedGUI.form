@@ -28,13 +28,13 @@
               <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="1" attributes="0">
                   <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                  <Component id="diagnosticBtn" min="-2" pref="123" max="-2" attributes="0"/>
+                  <Component id="medicationBtn" min="-2" pref="123" max="-2" attributes="0"/>
                   <Component id="patientBtn" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <EmptySpace min="0" pref="93" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="89" max="32767" attributes="0"/>
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
                           <Component id="consultationBtn" max="32767" attributes="0"/>
                           <Component id="monitoringBtn" max="32767" attributes="0"/>
@@ -62,7 +62,7 @@
               <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="consultationBtn" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="diagnosticBtn" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="medicationBtn" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="jScrollPane1" min="-2" pref="194" max="-2" attributes="0"/>
@@ -99,14 +99,17 @@
         </Component>
       </SubComponents>
     </Container>
-    <Component class="javax.swing.JButton" name="diagnosticBtn">
+    <Component class="javax.swing.JButton" name="medicationBtn">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Upload Image"/>
+        <Property name="text" type="java.lang.String" value="Track Medicines"/>
       </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="medicationBtnActionPerformed"/>
+      </Events>
     </Component>
     <Component class="javax.swing.JButton" name="consultationBtn">
       <Properties>
-        <Property name="text" type="java.lang.String" value="LiveConsultation"/>
+        <Property name="text" type="java.lang.String" value="Live Consultation"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">

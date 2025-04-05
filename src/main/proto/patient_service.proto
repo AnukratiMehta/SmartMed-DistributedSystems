@@ -17,6 +17,7 @@ message PatientRequest {
 message PatientResponse {
   string patient_id = 1;
   string name = 2;
-  repeated string medical_history = 3;
-  string current_medication = 4;
+  int32 age = 3;
+  repeated string medical_history = 4;
+  string current_medication = 5;
 }

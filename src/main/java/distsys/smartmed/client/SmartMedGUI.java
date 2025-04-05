@@ -9,18 +9,25 @@ package distsys.smartmed.client;
  * @author anukratimehta
  */
 import com.healthcare.grpc.consultation.*;
-import com.healthcare.grpc.diagnostic.*;
 import com.healthcare.grpc.monitoring.*;
 import com.healthcare.grpc.patient.*;
+import com.healthcare.grpc.medication.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import javax.swing.*;
-import java.awt.*;
+//import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Random;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class SmartMedGUI extends javax.swing.JFrame {
 
@@ -51,7 +58,7 @@ public class SmartMedGUI extends javax.swing.JFrame {
         monitoringBtn = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         resultArea = new javax.swing.JTextArea();
-        diagnosticBtn = new javax.swing.JButton();
+        medicationBtn = new javax.swing.JButton();
         consultationBtn = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         idField = new javax.swing.JTextField();
@@ -76,9 +83,14 @@ public class SmartMedGUI extends javax.swing.JFrame {
         resultArea.setRows(5);
         jScrollPane1.setViewportView(resultArea);
 
-        diagnosticBtn.setText("Upload Image");
+        medicationBtn.setText("Track Medicines");
+        medicationBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                medicationBtnActionPerformed(evt);
+            }
+        });
 
-        consultationBtn.setText("LiveConsultation");
+        consultationBtn.setText("Live Consultation");
 
         jLabel1.setText("Patient Id:");
 
@@ -97,12 +109,12 @@ public class SmartMedGUI extends javax.swing.JFrame {
                 .addGap(20, 20, 20)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel1)
-                    .addComponent(diagnosticBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(medicationBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(patientBtn))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 93, Short.MAX_VALUE)
+                        .addGap(0, 89, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(consultationBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(monitoringBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
@@ -123,7 +135,7 @@ public class SmartMedGUI extends javax.swing.JFrame {
                 .addGap(9, 9, 9)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(consultationBtn)
-                    .addComponent(diagnosticBtn))
+                    .addComponent(medicationBtn))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -163,6 +175,7 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
                 // Display REAL response from server
                 log("Name: " + response.getName());
+                log("Age: " + response.getAge());
                 log("Medication: " + response.getCurrentMedication());
                 log("History: " + response.getMedicalHistoryList());
 
@@ -220,43 +233,314 @@ public class SmartMedGUI extends javax.swing.JFrame {
         // TODO add your handling code here:
         String patientId = idField.getText().trim();
 
-    // Client-side validation
-    try {
-        int idNum = Integer.parseInt(patientId);
-        if (idNum < 1 || idNum > 100) {
-            log("\nError: Patient ID must be between 1-100");
+        // Client-side validation
+        try {
+            int idNum = Integer.parseInt(patientId);
+            if (idNum < 1 || idNum > 100) {
+                log("\nError: Patient ID must be between 1-100");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            log("\nError: Patient ID must be a number (1-100)");
             return;
         }
+
+        new Thread(() -> {
+            try {
+                log("\n=== Fetching Record for Patient: " + patientId + " ===");
+                PatientServiceGrpc.PatientServiceBlockingStub stub
+                        = PatientServiceGrpc.newBlockingStub(channel);
+
+                // Get response from server (no client-side generation)
+                PatientResponse response = stub.getPatientRecord(
+                        PatientRequest.newBuilder()
+                                .setPatientId(patientId)
+                                .build());
+
+                // Server will always return a valid response or error
+                log("Patient ID: " + response.getPatientId());
+                log("Name: " + response.getName());
+                log("Age: " + response.getAge());
+                log("Current Medication: " + response.getCurrentMedication());
+                log("Medical History: " + response.getMedicalHistoryList());
+
+            } catch (io.grpc.StatusRuntimeException e) {
+                log("Server Error: " + e.getStatus().getDescription());
+            } catch (Exception ex) {
+                log("Error: " + ex.getMessage());
+            }
+        }).start();
+    }//GEN-LAST:event_idFieldActionPerformed
+
+    private void medicationBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_medicationBtnActionPerformed
+        // TODO add your handling code here:
+    String patientId = idField.getText().trim();
+    String currentDateTime = java.time.LocalDateTime.now()
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+    try {
+        int id = Integer.parseInt(patientId);
+        if (id < 1 || id > 100) {
+            log("\nError: Patient ID must be 1-100");
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                // 1. Initialize tracking
+                log("\n=== Starting Medication Tracking at " + currentDateTime + " ===");
+                CountDownLatch latch = new CountDownLatch(1);
+
+                // 2. Generate patient-specific medication schedule
+                String currentTime = java.time.LocalTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                List<MedicationRecord> records = generatePatientMedications(patientId, currentTime);
+                if (records.isEmpty()) {
+                    log("No medications scheduled for today");
+                    return;
+                }
+
+                // 3. Prepare streaming
+                StreamObserver<MedicationRecord> requestObserver = 
+                    MedicationServiceGrpc.newStub(channel).analyzeMedicationSchedule(
+                        new StreamObserver<MedicationAnalysis>() {
+                            @Override
+                            public void onNext(MedicationAnalysis analysis) {
+                                log("\n=== Server Analysis Received ===");
+                                log(String.format("Adherence: %.1f%%", 
+                                    analysis.getAdherencePercentage()));
+                                log("Doses Taken: " + analysis.getTakenDoses() + 
+                                    "/" + analysis.getTotalDoses());
+                                log("Summary: " + analysis.getSummary());
+                                log("---");
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                log("\nError in analysis: " + t.getMessage());
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onCompleted() {
+                                latch.countDown();
+                            }
+                        });
+
+                // 4. Stream records
+                log("\n=== Streaming Medication Records ===");
+                for (MedicationRecord record : records) {
+                    String status = record.getWasTaken() ? 
+                        "(Taken at " + record.getActualTimeTaken() + ")" : 
+                        "(Missed - scheduled at " + record.getScheduledTime() + ")";
+                    log("Sending: " + record.getMedicationName() + " " + 
+                        record.getDosageMg() + "mg " + status);
+                    
+                    requestObserver.onNext(record);
+                    Thread.sleep(300); // Simulate network delay
+                }
+
+                // 5. Complete
+                log("\nFinished streaming " + records.size() + " records");
+                requestObserver.onCompleted();
+                latch.await();
+
+            } catch (Exception ex) {
+                log("Medication tracking error: " + ex.getMessage());
+            }
+        }).start();
+
     } catch (NumberFormatException e) {
-        log("\nError: Patient ID must be a number (1-100)");
-        return;
+        log("\nError: Invalid patient ID format");
     }
 
-    new Thread(() -> {
-        try {
-            log("\n=== Fetching Record for Patient: " + patientId + " ===");
-            PatientServiceGrpc.PatientServiceBlockingStub stub = 
-                PatientServiceGrpc.newBlockingStub(channel);
+}
 
-            // Get response from server (no client-side generation)
-            PatientResponse response = stub.getPatientRecord(
-                PatientRequest.newBuilder()
-                    .setPatientId(patientId)
-                    .build());
-
-            // Server will always return a valid response or error
-            log("Patient ID: " + response.getPatientId());
-            log("Name: " + response.getName());
-            log("Current Medication: " + response.getCurrentMedication());
-            log("Medical History: " + response.getMedicalHistoryList());
-            
-        } catch (io.grpc.StatusRuntimeException e) {
-            log("Server Error: " + e.getStatus().getDescription());
-        } catch (Exception ex) {
-            log("Error: " + ex.getMessage());
+private List<MedicationRecord> generatePatientMedications(String patientId, String currentTime) {
+    List<MedicationRecord> records = new ArrayList<>();
+    Random rand = new Random(patientId.hashCode());
+    
+    try {
+        // Parse current time
+        LocalTime now = LocalTime.parse(currentTime, DateTimeFormatter.ofPattern("HH:mm"));
+        
+        // Get patient's medication profile
+        String[][] medicationProfile = getPatientMedicationProfile(patientId);
+        
+        // First pass: Collect all eligible medications
+        List<MedicationRecord> allEligible = new ArrayList<>();
+        
+        for (String[] med : medicationProfile) {
+            String[] times = med[2].split(",");
+            for (String time : times) {
+                LocalTime scheduledTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+                
+                if (!scheduledTime.isAfter(now)) {
+                    boolean taken = rand.nextFloat() > 0.3; // 70% chance taken
+                    String actualTime = taken ? 
+                        scheduledTime.plusMinutes(rand.nextInt(61) - 30) // ±30 min variation
+                            .format(DateTimeFormatter.ofPattern("HH:mm")) : "";
+                    
+                    allEligible.add(MedicationRecord.newBuilder()
+                        .setPatientId(patientId)
+                        .setMedicationName(med[0])
+                        .setDosageMg(Float.parseFloat(med[1]))
+                        .setScheduledTime(time)
+                        .setWasTaken(taken)
+                        .setActualTimeTaken(actualTime)
+                        .build());
+                }
+            }
         }
-    }).start();
-    }//GEN-LAST:event_idFieldActionPerformed
+        
+        // Sort by scheduled time
+        Collections.sort(allEligible, new Comparator<MedicationRecord>() {
+            @Override
+            public int compare(MedicationRecord a, MedicationRecord b) {
+                return a.getScheduledTime().compareTo(b.getScheduledTime());
+            }
+        });
+        
+        // Use eligible records, ensuring no duplicates
+        records = new ArrayList<>(allEligible);
+        
+        // If we need more records to reach minimum of 3, add fallback records
+        if (records.size() < 3) {
+            // Simple fallback medications
+            String[][] fallbackMeds = {
+                {"Vitamin C", "500", "06:00"},
+                {"Vitamin B12", "500", "07:00"},
+                {"Iron", "65", "08:00"},
+                {"Omega-3", "1000", "12:00"},
+                {"Folic Acid", "400", "09:00"},
+                {"Vitamin E", "400", "10:00"},
+                {"Biotin", "300", "11:00"}
+            };
+            
+            for (String[] med : fallbackMeds) {
+                if (records.size() >= 3) break;
+                
+                // Create a new record
+                boolean taken = rand.nextBoolean();
+                String time = med[2];
+                String actualTime = taken ? 
+                    LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
+                        .plusMinutes(rand.nextInt(31))
+                        .format(DateTimeFormatter.ofPattern("HH:mm")) : "";
+                
+                MedicationRecord newRecord = MedicationRecord.newBuilder()
+                    .setPatientId(patientId)
+                    .setMedicationName(med[0])
+                    .setDosageMg(Float.parseFloat(med[1]))
+                    .setScheduledTime(time)
+                    .setWasTaken(taken)
+                    .setActualTimeTaken(actualTime)
+                    .build();
+                
+                // Simple check to avoid adding exactly the same record
+                boolean isDuplicate = false;
+                for (MedicationRecord existingRecord : records) {
+                    if (existingRecord.getMedicationName().equals(newRecord.getMedicationName()) &&
+                        existingRecord.getScheduledTime().equals(newRecord.getScheduledTime())) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+                
+                if (!isDuplicate) {
+                    records.add(newRecord);
+                }
+            }
+        }
+        
+        // Limit to maximum 10 records
+        if (records.size() > 10) {
+            records = records.subList(0, 10);
+        }
+        
+        // Re-sort after any modifications
+        Collections.sort(records, new Comparator<MedicationRecord>() {
+            @Override
+            public int compare(MedicationRecord a, MedicationRecord b) {
+                return a.getScheduledTime().compareTo(b.getScheduledTime());
+            }
+        });
+        
+    } catch (Exception e) {
+        System.err.println("Error generating medications: " + e.getMessage());
+    }
+    
+    return records;
+}
+
+private String[][] getPatientMedicationProfile(String patientId) {
+    int idHash = Math.abs(patientId.hashCode());
+
+    switch (idHash % 5) {
+        case 0: // Morning/Evening meds
+            return new String[][]{
+                {"Ibuprofen", "400", "07:30,19:30"},
+                {"Omeprazole", "20", "07:15"},
+                {"Levothyroxine", "75", "06:45"},
+                {"Losartan", "50", "08:00"},
+                {"Furosemide", "40", "07:00"},
+                {"Metoprolol", "100", "08:15,20:15"},
+                {"Glimepiride", "1", "07:45"},
+                {"Ranitidine", "150", "21:00"}
+            };
+
+        case 1: // Three-times daily
+            return new String[][]{
+                {"Metformin", "500", "06:45,13:15,19:00"},
+                {"Cefuroxime", "250", "07:30,14:00,20:00"},
+                {"Paracetamol", "650", "08:00,15:00,22:00"},
+                {"Salbutamol", "4", "06:00,12:00,18:00"},
+                {"Pantoprazole", "40", "07:00"},
+                {"Aspirin", "75", "09:30"},
+                {"Telmisartan", "40", "10:00"},
+                {"Esomeprazole", "20", "07:30,19:30"}
+            };
+
+        case 2: // Four times daily
+            return new String[][]{
+                {"Amoxicillin", "500", "06:00,12:00,18:00,00:00"},
+                {"Theophylline", "200", "05:30,11:30,17:30,23:30"},
+                {"Doxycycline", "100", "08:30,14:30,20:30,02:30"},
+                {"Linezolid", "600", "06:15,12:15,18:15,00:15"},
+                {"Cetirizine", "10", "07:45"},
+                {"Ciprofloxacin", "500", "06:30,14:30,22:30"},
+                {"Famotidine", "20", "09:00,21:00"},
+                {"Budesonide", "200", "05:45,11:45,17:45,23:45"}
+            };
+
+        case 3: // Evening focused
+            return new String[][]{
+                {"Atorvastatin", "20", "21:00"},
+                {"Melatonin", "3", "22:30"},
+                {"Zolpidem", "10", "23:15"},
+                {"Clonazepam", "0.5", "21:45"},
+                {"Trazodone", "50", "22:15"},
+                {"Ramipril", "10", "20:00"},
+                {"Olmesartan", "20", "18:30"},
+                {"Hydralazine", "25", "19:30,23:00"}
+            };
+
+        default: // Morning focused
+            return new String[][]{
+                {"Lisinopril", "10", "07:00"},
+                {"Amlodipine", "5", "07:30"},
+                {"Insulin Glargine", "10", "06:00"},
+                {"Atenolol", "50", "08:30"},
+                {"Hydrochlorothiazide", "25", "09:00"},
+                {"Bisoprolol", "5", "07:15"},
+                {"Duloxetine", "30", "08:00"},
+                {"Enalapril", "10", "07:45"}
+            };
+    }
+
+
+
+    }//GEN-LAST:event_medicationBtnActionPerformed
 
     /**
      * @param args the command line arguments
@@ -305,10 +589,10 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton consultationBtn;
-    private javax.swing.JButton diagnosticBtn;
     private javax.swing.JTextField idField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JButton medicationBtn;
     private javax.swing.JButton monitoringBtn;
     private javax.swing.JButton patientBtn;
     private javax.swing.JTextArea resultArea;
