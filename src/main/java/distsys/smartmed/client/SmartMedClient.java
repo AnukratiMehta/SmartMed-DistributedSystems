@@ -162,53 +162,6 @@ public void testMedicationService(String patientId) throws InterruptedException 
     }
 
 
-//
-//    // 4. Test Bi-directional Streaming (Consultation)
-//    public void testConsultationService() throws InterruptedException {
-//        System.out.println("\n=== Testing Consultation Service ===");
-//        CountDownLatch latch = new CountDownLatch(1);
-//
-//        StreamObserver<ConsultationMessage> requestObserver = 
-//            consultationStub.liveConsultation(new StreamObserver<ConsultationMessage>() {
-//                @Override
-//                public void onNext(ConsultationMessage message) {
-//                    System.out.println("AI Doctor: " + message.getText());
-//                }
-//
-//                @Override
-//                public void onError(Throwable t) {
-//                    System.err.println("Consultation Error: " + t.getMessage());
-//                    latch.countDown();
-//                }
-//
-//                @Override
-//                public void onCompleted() {
-//                    System.out.println("Consultation ended");
-//                    latch.countDown();
-//                }
-//            });
-//
-//        // Send 3 messages
-//        String[] patientMessages = {
-//            "Hello, I have a headache",
-//            "It's been persistent for 2 days",
-//            "What should I do?"
-//        };
-//
-//        for (String msg : patientMessages) {
-//            ConsultationMessage message = ConsultationMessage.newBuilder()
-//                .setSenderId("patient-123")
-//                .setText(msg)
-//                .setTimestamp(System.currentTimeMillis())
-//                .build();
-//            requestObserver.onNext(message);
-//            Thread.sleep(1000);
-//        }
-//        
-//        requestObserver.onCompleted();
-//        latch.await();
-//    }
-
 
     public static void main(String[] args) throws Exception {
         SmartMedClient client = new SmartMedClient("localhost", 50051);

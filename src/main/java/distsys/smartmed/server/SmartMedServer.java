@@ -20,7 +20,7 @@ public class SmartMedServer {
             .addService(new PatientServiceImpl())
             .addService(new MonitoringServiceImpl())
             .addService(new MedicationServiceImpl())
-//            .addService(new ConsultationServiceImpl())
+            .addService(new ConsultationServiceImpl())
             .build();
 
         server.start();
@@ -28,8 +28,8 @@ public class SmartMedServer {
         System.out.println("[SmartMed] Services registered:");
         System.out.println("- Patient Records");
         System.out.println("- Vitals Monitoring"); 
-        System.out.println("- Medical Imaging");
-//        System.out.println("- Live Consultation");
+        System.out.println("- Medication Management");
+        System.out.println("- Live Consultation");
 
         server.awaitTermination();
     }

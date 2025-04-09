@@ -11,7 +11,7 @@ service ConsultationService {
 }
 
 message ConsultationMessage {
-  string sender_id = 1;
+  string sender_id = 1;  // "patient-123" or "doctor-ai"
   string text = 2;
-  int64 timestamp = 3;
+  string timestamp = 3;  // Format: "yyyy-MM-dd HH:mm:ss"
 }
