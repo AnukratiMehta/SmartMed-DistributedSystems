@@ -8,10 +8,10 @@ package distsys.smartmed.client;
  *
  * @author anukratimehta
  */
-import com.healthcare.grpc.consultation.*;
 import com.healthcare.grpc.monitoring.*;
 import com.healthcare.grpc.patient.*;
 import com.healthcare.grpc.medication.*;
+import com.healthcare.grpc.rehab.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -28,6 +28,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
+import java.awt.BorderLayout;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SmartMedGUI extends javax.swing.JFrame {
 
@@ -59,9 +62,9 @@ public class SmartMedGUI extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         resultArea = new javax.swing.JTextArea();
         medicationBtn = new javax.swing.JButton();
-        consultationBtn = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         idField = new javax.swing.JTextField();
+        rehabBtn = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -90,13 +93,18 @@ public class SmartMedGUI extends javax.swing.JFrame {
             }
         });
 
-        consultationBtn.setText("Live Consultation");
-
         jLabel1.setText("Patient Id:");
 
         idField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 idFieldActionPerformed(evt);
+            }
+        });
+
+        rehabBtn.setText("Start Rehab");
+        rehabBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rehabBtnActionPerformed(evt);
             }
         });
 
@@ -113,12 +121,12 @@ public class SmartMedGUI extends javax.swing.JFrame {
                     .addComponent(patientBtn))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
+                    .addComponent(idField)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 89, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(consultationBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(monitoringBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addComponent(idField))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(rehabBtn)
+                            .addComponent(monitoringBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGap(20, 20, 20))
         );
         layout.setVerticalGroup(
@@ -128,15 +136,15 @@ public class SmartMedGUI extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(idField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(monitoringBtn)
                     .addComponent(patientBtn))
                 .addGap(9, 9, 9)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(consultationBtn)
-                    .addComponent(medicationBtn))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                    .addComponent(medicationBtn)
+                    .addComponent(rehabBtn))
+                .addGap(15, 15, 15)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
@@ -542,6 +550,127 @@ private String[][] getPatientMedicationProfile(String patientId) {
 
     }//GEN-LAST:event_medicationBtnActionPerformed
 
+    private void rehabBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rehabBtnActionPerformed
+        // TODO add your handling code here:
+    String patientId = idField.getText().trim();
+    
+    // Input validation
+    try {
+        int id = Integer.parseInt(patientId);
+        if (id < 1 || id > 100) {
+            log("\nError: Patient ID must be between 1-100");
+            return;
+        }
+    } catch (NumberFormatException e) {
+        log("\nError: Please enter a number 1-100");
+        return;
+    }
+
+    new Thread(() -> {
+        try {
+            log("\n=== Starting Rehab Exercise Feedback ===");
+            
+            // Create a latch to wait for completion
+            CountDownLatch finishLatch = new CountDownLatch(1);
+            
+            // Create async stub
+            RehabServiceGrpc.RehabServiceStub stub = RehabServiceGrpc.newStub(channel);
+            
+            // Create response observer
+            StreamObserver<ExerciseFeedback> responseObserver = new StreamObserver<ExerciseFeedback>() {
+                @Override
+                public void onNext(ExerciseFeedback feedback) {
+                    if (feedback.getRepetitionNumber() == 0) {
+                        // This is the summary message
+                        log("\n=== EXERCISE SUMMARY ===");
+                        log(feedback.getMessage());
+                        log("========================");
+                    } else {
+                        // Regular feedback message
+                        String formattedMessage = String.format(
+                            "[Rep %d] %s - %s", 
+                            feedback.getRepetitionNumber(),
+                            feedback.getSeverity().toUpperCase(),
+                            feedback.getMessage()
+                        );
+                        log(formattedMessage);
+                    }
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    log("Error in exercise feedback: " + t.getMessage());
+                    finishLatch.countDown();
+                }
+
+                @Override
+                public void onCompleted() {
+                    log("\nSession ended. Thank you for exercising!");
+                    finishLatch.countDown();
+                }
+            };
+            
+            // Create request observer
+            StreamObserver<ExerciseInput> requestObserver = stub.liveExerciseFeedback(responseObserver);
+            
+            // Simulate exercise data
+            String[] exercises = {"Squat", "Lunge", "Leg Raise", "Arm Curl", "Shoulder Press"};
+            String selectedExercise = exercises[new Random().nextInt(exercises.length)];
+            
+            log("Starting exercise: " + selectedExercise + " for patient " + patientId);
+            log("Performing 10 repetitions...\n");
+            
+            // Simulate 10 repetitions with random posture angles
+            for (int i = 1; i <= 10; i++) {
+                try {
+                    // Generate random posture angle between 20-50 degrees
+                    double postureAngle = 20 + new Random().nextDouble() * 30;
+                    
+                    // Create exercise input
+                    ExerciseInput input = ExerciseInput.newBuilder()
+                        .setPatientId(patientId)
+                        .setExerciseName(selectedExercise)
+                        .setRepetitionNumber(i)
+                        .setPostureAngle(postureAngle)
+                        .setNotes("Repetition " + i)
+                        .build();
+                    
+                    // Send to server
+                    requestObserver.onNext(input);
+                    
+                    // Log what we're sending
+                    log(String.format(
+                        "Sent rep %d - Angle: %.1f°", 
+                        i, postureAngle
+                    ));
+                    
+                    // Wait between reps
+                    Thread.sleep(1000);
+                    
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log("Exercise interrupted: " + e.getMessage());
+                    break;
+                } catch (Exception e) {
+                    log("Error during exercise: " + e.getMessage());
+                    break;
+                }
+            }
+            
+            // Complete the stream
+            requestObserver.onCompleted();
+            
+            // Wait for completion
+            finishLatch.await();
+            
+        } catch (Exception e) {
+            log("Error in rehab session: " + e.getMessage());
+        }
+    }).start();
+
+
+    }//GEN-LAST:event_rehabBtnActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -586,15 +715,21 @@ private String[][] getPatientMedicationProfile(String patientId) {
             }
         });
     }
+    
+
+private String getCurrentTimestamp() {
+    return java.time.LocalDateTime.now()
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton consultationBtn;
     private javax.swing.JTextField idField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton medicationBtn;
     private javax.swing.JButton monitoringBtn;
     private javax.swing.JButton patientBtn;
+    private javax.swing.JButton rehabBtn;
     private javax.swing.JTextArea resultArea;
     // End of variables declaration//GEN-END:variables
 }

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package healthcare;
+
+option java_multiple_files = true;
+option java_package = "com.healthcare.grpc.rehab";
+option java_outer_classname = "RehabServiceProto";
+
+service RehabService {
+  rpc LiveExerciseFeedback (stream ExerciseInput) returns (stream ExerciseFeedback);
+}
+
+message ExerciseInput {
+  string patient_id = 1;
+  string exercise_name = 2;
+  int32 repetition_number = 3;
+  double posture_angle = 4;
+  string notes = 5;
+}
+
+message ExerciseFeedback {
+  string message = 1;
+  int32 repetition_number = 2;
+  string severity = 3; // "info", "warning", "critical"
+}
+

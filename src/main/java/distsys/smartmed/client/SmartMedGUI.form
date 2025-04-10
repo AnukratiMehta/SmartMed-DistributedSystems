@@ -33,14 +33,14 @@
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" attributes="0">
+                  <Component id="idField" max="32767" attributes="0"/>
+                  <Group type="102" alignment="1" attributes="0">
                       <EmptySpace min="0" pref="89" max="32767" attributes="0"/>
-                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                          <Component id="consultationBtn" max="32767" attributes="0"/>
-                          <Component id="monitoringBtn" max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="rehabBtn" min="-2" max="-2" attributes="0"/>
+                          <Component id="monitoringBtn" min="-2" pref="130" max="-2" attributes="0"/>
                       </Group>
                   </Group>
-                  <Component id="idField" max="32767" attributes="0"/>
               </Group>
               <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
           </Group>
@@ -54,17 +54,17 @@
                   <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="idField" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="10" max="32767" attributes="0"/>
+              <EmptySpace pref="7" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="monitoringBtn" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="patientBtn" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="consultationBtn" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="medicationBtn" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="rehabBtn" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="15" max="-2" attributes="0"/>
               <Component id="jScrollPane1" min="-2" pref="194" max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -107,11 +107,6 @@
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="medicationBtnActionPerformed"/>
       </Events>
     </Component>
-    <Component class="javax.swing.JButton" name="consultationBtn">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Live Consultation"/>
-      </Properties>
-    </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
         <Property name="text" type="java.lang.String" value="Patient Id:"/>
@@ -121,6 +116,17 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="idFieldActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JButton" name="rehabBtn">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Start Rehab"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="rehabBtnActionPerformed"/>
+      </Events>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="SmartMedGUI_consultationBtn"/>
+      </AuxValues>
     </Component>
   </SubComponents>
 </Form>
