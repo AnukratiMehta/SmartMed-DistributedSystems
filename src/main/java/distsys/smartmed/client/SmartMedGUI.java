@@ -31,19 +31,24 @@ import java.util.Comparator;
 import java.awt.BorderLayout;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+import distsys.smartmed.security.JwtClientInterceptor;
+import distsys.smartmed.security.JwtUtil;
 
 public class SmartMedGUI extends javax.swing.JFrame {
 
     private ManagedChannel channel;
+    private final String jwtToken;
 
     public SmartMedGUI() {
         initComponents();
+        this.jwtToken = JwtUtil.generateToken();
         initializeGRPCChannel();
         idField.requestFocusInWindow();
     }
 
     private void initializeGRPCChannel() {
         this.channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+                .intercept(new JwtClientInterceptor(jwtToken)) 
                 .usePlaintext()
                 .build();
     }
@@ -721,6 +726,14 @@ private String getCurrentTimestamp() {
     return java.time.LocalDateTime.now()
         .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 }
+
+ @Override
+    public void dispose() {
+        if (channel != null) {
+            channel.shutdown();
+        }
+        super.dispose();
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField idField;

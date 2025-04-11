@@ -1,12 +1,6 @@
-
 package distsys.smartmed.server;
 
-/**
- *
- * @author anukratimehta
- */
-
-
+import distsys.smartmed.security.JwtServerInterceptor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
@@ -27,17 +21,17 @@ public class SmartMedServer {
     }
 
     private void start() throws IOException {
-        // Create JmDNS instance (as shown in PPT)
-    jmdns = JmDNS.create(InetAddress.getByName("0.0.0.0"));
+        jmdns = JmDNS.create(InetAddress.getByName("0.0.0.0"));
+        
+        // Register services
+        registerService("PatientService");
+        registerService("MonitoringService");
+        registerService("MedicationService");
+        registerService("RehabService");
 
-        // Register all services (PPT Slide jmDNS II-III)
-        registerService("PatientService", "Patient records service");
-        registerService("MonitoringService", "Real-time vitals monitoring");
-        registerService("MedicationService", "Medication tracking");
-        registerService("RehabService", "Physical therapy feedback");
-
-        // Start gRPC server
+        // Start server with JWT interceptor
         server = ServerBuilder.forPort(PORT)
+            .intercept(new JwtServerInterceptor())
             .addService(new PatientServiceImpl())
             .addService(new MonitoringServiceImpl())
             .addService(new MedicationServiceImpl())
@@ -45,25 +39,20 @@ public class SmartMedServer {
             .build()
             .start();
 
-        System.out.println("Server started on port " + PORT + " with services:");
-        System.out.println("- PatientService");
-        System.out.println("- MonitoringService");
-        System.out.println("- MedicationService");
-        System.out.println("- RehabService");
-
-        // Add shutdown hook
+        System.out.println("Secure server started on port " + PORT);
+        
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down server...");
             stop();
         }));
     }
 
-    private void registerService(String serviceName, String serviceDesc) throws IOException {
+    private void registerService(String serviceName) throws IOException {
         ServiceInfo serviceInfo = ServiceInfo.create(
-            SERVICE_TYPE,
-            serviceName,
-            PORT,
-            serviceDesc
+            SERVICE_TYPE, 
+            serviceName, 
+            PORT, 
+            "Secure gRPC service"
         );
         jmdns.registerService(serviceInfo);
         System.out.println("Registered service: " + serviceName);
@@ -72,11 +61,7 @@ public class SmartMedServer {
     private void stop() {
         if (jmdns != null) {
             jmdns.unregisterAllServices();
-            try {
-                jmdns.close();
-            } catch (IOException e) {
-                System.err.println("Error closing JmDNS: " + e.getMessage());
-            }
+            try { jmdns.close(); } catch (IOException e) {}
         }
         if (server != null) {
             server.shutdown();
