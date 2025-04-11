@@ -16,6 +16,7 @@ import java.util.*;
 
 public class PatientServiceImpl extends PatientServiceGrpc.PatientServiceImplBase {
     
+    
     @Override
     public void getPatientRecord(PatientRequest request, 
                                StreamObserver<PatientResponse> responseObserver) {

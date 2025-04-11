@@ -23,14 +23,16 @@ public class SmartMedServer {
     private void start() throws IOException {
         jmdns = JmDNS.create(InetAddress.getByName("0.0.0.0"));
         
-        // Register services
+        // Register all services
+        registerService("AuthService");
         registerService("PatientService");
         registerService("MonitoringService");
         registerService("MedicationService");
         registerService("RehabService");
 
-        // Start server with JWT interceptor
+        // Build server with JWT interceptor
         server = ServerBuilder.forPort(PORT)
+            .addService(new AuthServiceImpl()) 
             .intercept(new JwtServerInterceptor())
             .addService(new PatientServiceImpl())
             .addService(new MonitoringServiceImpl())
@@ -39,8 +41,13 @@ public class SmartMedServer {
             .build()
             .start();
 
-        System.out.println("Secure server started on port " + PORT);
-        
+        System.out.println("Server started on port " + PORT + " with services:");
+        System.out.println("- AuthService (login)");
+        System.out.println("- PatientService");
+        System.out.println("- MonitoringService");
+        System.out.println("- MedicationService");
+        System.out.println("- RehabService");
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down server...");
             stop();
@@ -49,19 +56,23 @@ public class SmartMedServer {
 
     private void registerService(String serviceName) throws IOException {
         ServiceInfo serviceInfo = ServiceInfo.create(
-            SERVICE_TYPE, 
-            serviceName, 
-            PORT, 
-            "Secure gRPC service"
+            SERVICE_TYPE,
+            serviceName,
+            PORT,
+            serviceName.equals("AuthService") ? "Authentication service" : "SmartMed service"
         );
         jmdns.registerService(serviceInfo);
-        System.out.println("Registered service: " + serviceName);
+        System.out.println("Registered: " + serviceName);
     }
 
     private void stop() {
         if (jmdns != null) {
             jmdns.unregisterAllServices();
-            try { jmdns.close(); } catch (IOException e) {}
+            try {
+                jmdns.close();
+            } catch (IOException e) {
+                System.err.println("Error closing JmDNS: " + e.getMessage());
+            }
         }
         if (server != null) {
             server.shutdown();

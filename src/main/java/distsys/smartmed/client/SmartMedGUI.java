@@ -12,6 +12,7 @@ import com.healthcare.grpc.monitoring.*;
 import com.healthcare.grpc.patient.*;
 import com.healthcare.grpc.medication.*;
 import com.healthcare.grpc.rehab.*;
+import com.healthcare.grpc.auth.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -37,20 +38,49 @@ import distsys.smartmed.security.JwtUtil;
 public class SmartMedGUI extends javax.swing.JFrame {
 
     private ManagedChannel channel;
-    private final String jwtToken;
+    private String jwtToken;
 
     public SmartMedGUI() {
         initComponents();
-        this.jwtToken = JwtUtil.generateToken();
         initializeGRPCChannel();
         idField.requestFocusInWindow();
     }
-
-    private void initializeGRPCChannel() {
-        this.channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                .intercept(new JwtClientInterceptor(jwtToken)) 
+    
+    private boolean performLogin() {
+        try {
+            // First create unauthenticated channel
+            ManagedChannel tempChannel = ManagedChannelBuilder.forAddress("localhost", 50051)
                 .usePlaintext()
                 .build();
+            
+            AuthServiceGrpc.AuthServiceBlockingStub authStub = AuthServiceGrpc.newBlockingStub(tempChannel);
+            
+            LoginResponse response = authStub.login(
+                LoginRequest.newBuilder()
+                    .setUsername("admin")
+                    .setPassword("smartmed123")
+                    .build());
+            
+            this.jwtToken = response.getToken();
+            resultArea.append("Login successful! Welcome admin\n");
+            tempChannel.shutdown();
+            return true;
+        } catch (Exception e) {
+            resultArea.append("Login failed: " + e.getMessage() + "\n");
+            // Fallback to default token if login fails
+            this.jwtToken = JwtUtil.generateToken(); // Uses parameterless version
+            return false;
+        }
+    }
+
+    private void initializeGRPCChannel() {
+        performLogin(); // Get token first
+        
+        // Create authenticated channel
+        this.channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+            .intercept(new JwtClientInterceptor(jwtToken))
+            .usePlaintext()
+            .build();
     }
 
     /**

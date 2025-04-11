@@ -12,6 +12,11 @@ public class JwtServerInterceptor implements ServerInterceptor {
         Metadata headers,
         ServerCallHandler<ReqT, RespT> next) {
         
+        // Skip authentication for AuthService
+        if (call.getMethodDescriptor().getServiceName().equals("healthcare.AuthService")) {
+            return next.startCall(call, headers);
+        }
+
         String token = headers.get(AUTH_HEADER);
         if (token == null) {
             call.close(Status.UNAUTHENTICATED.withDescription("Authorization token is missing"), headers);
