@@ -5,6 +5,7 @@ import distsys.smartmed.common.ValidationUtils;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.logging.Logger;
+import distsys.smartmed.common.LoggingUtils;
 
 public class RehabServiceImpl extends RehabServiceGrpc.RehabServiceImplBase {
     private static final Logger logger = Logger.getLogger(RehabServiceImpl.class.getName());
@@ -16,58 +17,52 @@ public class RehabServiceImpl extends RehabServiceGrpc.RehabServiceImplBase {
         return new StreamObserver<ExerciseInput>() {
             private int totalReps = 0;
             private int goodPostureCount = 0;
-            private int warningCount = 0;
-            private int criticalCount = 0;
             private String currentExercise = "";
             private String patientId = "";
 
             @Override
-            public void onNext(ExerciseInput exerciseInput) {
+            public void onNext(ExerciseInput input) {
                 try {
-                    // Validate before processing
-                    ValidationUtils.validatePatientId(exerciseInput.getPatientId());
+                    // Validate first
+                    ValidationUtils.validatePatientId(input.getPatientId());
                     
                     if (totalReps == 0) {
-                        currentExercise = exerciseInput.getExerciseName();
-                        patientId = exerciseInput.getPatientId();
-                        logger.info(String.format(
-                            "Starting rehab session for %s: %s",
-                            patientId, currentExercise));
+                        // Initialize session on first rep
+                        patientId = input.getPatientId();
+                        currentExercise = input.getExerciseName();
+                        LoggingUtils.logServiceStart(logger, "RehabService", patientId);
                     }
-                    
-                    totalReps++;
-                    double angle = exerciseInput.getPostureAngle();
-                    logger.fine(String.format(
-                        "Rep %d for %s - Angle: %.1f°",
-                        exerciseInput.getRepetitionNumber(),
-                        currentExercise,
-                        angle));
 
-                    String feedbackMessage;
-                    String severity;
+                    totalReps++;
+                    double angle = input.getPostureAngle();
                     
+                    // Generate immediate feedback
+                    String feedbackMsg;
+                    String severity;
                     if (angle < 30) {
-                        feedbackMessage = "Your posture is too bent. Try to straighten your back.";
-                        severity = "critical";
-                        criticalCount++;
+                        feedbackMsg = "Bend less at the knees";
+                        severity = "WARNING";
                     } else if (angle > 45) {
-                        feedbackMessage = "Your posture is too rigid. Try to relax your muscles.";
-                        severity = "warning";
-                        warningCount++;
+                        feedbackMsg = "Too rigid - relax your muscles";
+                        severity = "WARNING";
                     } else {
-                        feedbackMessage = "Your posture is good!";
-                        severity = "info";
+                        feedbackMsg = "Perfect form!";
+                        severity = "INFO";
                         goodPostureCount++;
                     }
 
+                    // Send real-time feedback
                     responseObserver.onNext(ExerciseFeedback.newBuilder()
-                        .setMessage(feedbackMessage)
-                        .setRepetitionNumber(exerciseInput.getRepetitionNumber())
+                        .setRepetitionNumber(input.getRepetitionNumber())
+                        .setMessage(feedbackMsg)
                         .setSeverity(severity)
                         .build());
 
+                    logger.fine(String.format("Processed rep %d: %.1f° - %s", 
+                        input.getRepetitionNumber(), angle, severity));
+
                 } catch (IllegalArgumentException e) {
-                    logger.warning("Invalid exercise input: " + e.getMessage());
+                    logger.warning("Invalid input: " + e.getMessage());
                     responseObserver.onError(Status.INVALID_ARGUMENT
                         .withDescription(e.getMessage())
                         .asRuntimeException());
@@ -76,48 +71,30 @@ public class RehabServiceImpl extends RehabServiceGrpc.RehabServiceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                logger.warning(String.format(
-                    "Rehab session error for %s: %s",
-                    patientId, t.getMessage()));
+                logger.warning("Client error: " + t.getMessage());
             }
 
             @Override
             public void onCompleted() {
-                if (totalReps == 0) {
-                    logger.warning("Empty rehab session received");
-                    responseObserver.onError(Status.INVALID_ARGUMENT
-                        .withDescription("No exercise data received")
-                        .asRuntimeException());
-                    return;
+                try {
+                    // Send final summary
+                    double successRate = (goodPostureCount * 100.0) / totalReps;
+                    String summary = String.format(
+                        "Completed %d reps of %s. Good posture: %.1f%% (%d/%d)",
+                        totalReps, currentExercise, successRate, goodPostureCount, totalReps);
+                    
+                    responseObserver.onNext(ExerciseFeedback.newBuilder()
+                        .setRepetitionNumber(0) // Special marker for summary
+                        .setMessage(summary)
+                        .setSeverity("SUMMARY")
+                        .build());
+                    
+                    responseObserver.onCompleted();
+                    logger.info("Session completed for " + patientId + ": " + summary);
+                    
+                } catch (Exception e) {
+                    logger.severe("Error completing session: " + e.getMessage());
                 }
-
-                double goodPosturePercentage = (double) goodPostureCount / totalReps * 100;
-                String summaryMessage;
-                
-                if (goodPosturePercentage >= 80) {
-                    summaryMessage = String.format(
-                        "Excellent work %s! You maintained good posture in %.1f%% of your %s reps (%d/%d).",
-                        patientId, goodPosturePercentage, currentExercise, goodPostureCount, totalReps);
-                } else if (goodPosturePercentage >= 60) {
-                    summaryMessage = String.format(
-                        "Good job %s. You had good posture in %.1f%% of %s reps (%d/%d). Try to maintain form consistently.",
-                        patientId, goodPosturePercentage, currentExercise, goodPostureCount, totalReps);
-                } else {
-                    summaryMessage = String.format(
-                        "%s, you had good posture in only %.1f%% of %s reps (%d/%d). Focus on your form next time.",
-                        patientId, goodPosturePercentage, currentExercise, goodPostureCount, totalReps);
-                }
-
-                responseObserver.onNext(ExerciseFeedback.newBuilder()
-                    .setMessage(summaryMessage)
-                    .setRepetitionNumber(0)
-                    .setSeverity("summary")
-                    .build());
-
-                responseObserver.onCompleted();
-                logger.info(String.format(
-                    "Completed rehab session for %s: %d reps of %s (%d good, %d warnings, %d critical)",
-                    patientId, totalReps, currentExercise, goodPostureCount, warningCount, criticalCount));
             }
         };
     }
