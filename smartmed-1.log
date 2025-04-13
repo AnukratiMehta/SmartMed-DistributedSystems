@@ -1,16 +1,140 @@
-Apr 13, 2025 10:42:04 PM distsys.smartmed.server.SmartMedServer configureLogging
+Apr 13, 2025 10:54:49 PM distsys.smartmed.server.SmartMedServer configureLogging
 INFO: Logging configured successfully
-Apr 13, 2025 10:42:05 PM distsys.smartmed.server.SmartMedServer start
+Apr 13, 2025 10:54:49 PM distsys.smartmed.server.SmartMedServer start
 INFO: Server started on port 50051
-Apr 13, 2025 10:42:30 PM distsys.smartmed.server.AuthServiceImpl login
-INFO: Login attempt for user: admin
-Apr 13, 2025 10:42:31 PM distsys.smartmed.server.AuthServiceImpl login
-INFO: Successful login for: admin
-Apr 13, 2025 10:42:34 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+Apr 13, 2025 10:55:16 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 10:55:16 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: wrong
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [AuthService] Error for patient User: wrong: Invalid credentials for user: wrong
+Apr 13, 2025 10:58:45 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 13, 2025 10:58:45 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 21
+Apr 13, 2025 10:58:55 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 21 (Stream completed)
+Apr 13, 2025 10:58:55 PM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed@7ef83c9
+java.lang.IllegalStateException: call already closed
+	at com.google.common.base.Preconditions.checkState(Preconditions.java:508)
+	at io.grpc.internal.ServerCallImpl.closeInternal(ServerCallImpl.java:219)
+	at io.grpc.internal.ServerCallImpl.close(ServerCallImpl.java:212)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onCompleted(ServerCalls.java:395)
+	at distsys.smartmed.server.MonitoringServiceImpl.streamVitals(MonitoringServiceImpl.java:50)
+	at com.healthcare.grpc.monitoring.MonitoringServiceGrpc$MethodHandlers.invoke(MonitoringServiceGrpc.java:198)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.halfClosed(ServerCallImpl.java:355)
+	at io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed.runInContext(ServerImpl.java:867)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1575)
+
+Apr 13, 2025 10:59:11 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 10:59:11 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 10:59:14 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 13, 2025 10:59:14 PM distsys.smartmed.server.RehabServiceImpl$1 onNext
+WARNING: Invalid input: Patient ID must be between 1-100
+Apr 13, 2025 10:59:15 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 13, 2025 10:59:15 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [MonitoringService] Error for patient d: Patient ID must be between 1-100
+Apr 13, 2025 10:59:15 PM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed@c9bebf7
+java.lang.IllegalStateException: call already closed
+	at com.google.common.base.Preconditions.checkState(Preconditions.java:508)
+	at io.grpc.internal.ServerCallImpl.closeInternal(ServerCallImpl.java:219)
+	at io.grpc.internal.ServerCallImpl.close(ServerCallImpl.java:212)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onCompleted(ServerCalls.java:395)
+	at distsys.smartmed.server.MonitoringServiceImpl.streamVitals(MonitoringServiceImpl.java:50)
+	at com.healthcare.grpc.monitoring.MonitoringServiceGrpc$MethodHandlers.invoke(MonitoringServiceGrpc.java:198)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.halfClosed(ServerCallImpl.java:355)
+	at io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed.runInContext(ServerImpl.java:867)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1575)
+
+Apr 13, 2025 10:59:18 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 13, 2025 10:59:18 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [MonitoringService] Error for patient dw: Patient ID must be between 1-100
+Apr 13, 2025 10:59:18 PM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed@3f56a211
+java.lang.IllegalStateException: call already closed
+	at com.google.common.base.Preconditions.checkState(Preconditions.java:508)
+	at io.grpc.internal.ServerCallImpl.closeInternal(ServerCallImpl.java:219)
+	at io.grpc.internal.ServerCallImpl.close(ServerCallImpl.java:212)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onCompleted(ServerCalls.java:395)
+	at distsys.smartmed.server.MonitoringServiceImpl.streamVitals(MonitoringServiceImpl.java:50)
+	at com.healthcare.grpc.monitoring.MonitoringServiceGrpc$MethodHandlers.invoke(MonitoringServiceGrpc.java:198)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.halfClosed(ServerCallImpl.java:355)
+	at io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed.runInContext(ServerImpl.java:867)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1575)
+
+Apr 13, 2025 11:00:27 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 13, 2025 11:00:27 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [PatientService] Error for patient dw: Patient ID must be between 1-100
+Apr 13, 2025 11:00:31 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 13, 2025 11:00:31 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [MonitoringService] Error for patient dw: Patient ID must be between 1-100
+Apr 13, 2025 11:00:31 PM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed@39cbe15f
+java.lang.IllegalStateException: call already closed
+	at com.google.common.base.Preconditions.checkState(Preconditions.java:508)
+	at io.grpc.internal.ServerCallImpl.closeInternal(ServerCallImpl.java:219)
+	at io.grpc.internal.ServerCallImpl.close(ServerCallImpl.java:212)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onCompleted(ServerCalls.java:395)
+	at distsys.smartmed.server.MonitoringServiceImpl.streamVitals(MonitoringServiceImpl.java:50)
+	at com.healthcare.grpc.monitoring.MonitoringServiceGrpc$MethodHandlers.invoke(MonitoringServiceGrpc.java:198)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.halfClosed(ServerCallImpl.java:355)
+	at io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1HalfClosed.runInContext(ServerImpl.java:867)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1575)
+
+Apr 13, 2025 11:00:34 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 13, 2025 11:00:34 PM distsys.smartmed.server.RehabServiceImpl$1 onNext
+WARNING: Invalid input: Patient ID must be between 1-100
+Apr 13, 2025 11:00:43 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
 INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
-Apr 13, 2025 10:42:34 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [MedicationService] Starting for patient 12
-Apr 13, 2025 10:42:47 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
-INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
-Apr 13, 2025 10:42:47 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [MedicationService] Starting for patient 13
+Apr 13, 2025 11:00:43 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [MedicationService] Error for patient dw: Patient ID must be between 1-100
+Apr 13, 2025 11:04:27 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 11:04:27 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 11:04:30 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 13, 2025 11:04:30 PM distsys.smartmed.server.RehabServiceImpl$1 onNext
+WARNING: Invalid input: Patient ID must be between 1-100
+Apr 13, 2025 11:05:16 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 11:05:16 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 11:28:31 PM distsys.smartmed.server.SmartMedServer lambda$start$0
+INFO: Shutting down server...

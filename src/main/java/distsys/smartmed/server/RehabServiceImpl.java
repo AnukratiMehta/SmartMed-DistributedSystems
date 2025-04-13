@@ -80,7 +80,7 @@ public class RehabServiceImpl extends RehabServiceGrpc.RehabServiceImplBase {
                     // Send final summary
                     double successRate = (goodPostureCount * 100.0) / totalReps;
                     String summary = String.format(
-                        "Completed %d reps of %s. Good posture: %.1f%% (%d/%d)",
+                        "Completed %d reps of %s.\nGood posture: %.1f%% (%d/%d)",
                         totalReps, currentExercise, successRate, goodPostureCount, totalReps);
                     
                     responseObserver.onNext(ExerciseFeedback.newBuilder()

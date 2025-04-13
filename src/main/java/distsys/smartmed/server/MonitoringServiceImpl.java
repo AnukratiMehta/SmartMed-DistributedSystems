@@ -46,8 +46,6 @@ public void streamVitals(VitalsRequest request, StreamObserver<VitalsUpdate> res
     } catch (InterruptedException e) {
         LoggingUtils.logError(logger, "MonitoringService", patientId, e, false);
         Thread.currentThread().interrupt();
-    } finally {
-        responseObserver.onCompleted();
     }
 }    
 }

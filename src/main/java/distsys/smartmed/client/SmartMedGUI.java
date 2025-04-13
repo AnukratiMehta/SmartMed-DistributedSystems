@@ -16,7 +16,6 @@ import com.healthcare.grpc.auth.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import java.util.concurrent.CountDownLatch;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -27,7 +26,6 @@ import java.util.Comparator;
 import distsys.smartmed.security.JwtClientInterceptor;
 import distsys.smartmed.security.JwtUtil;
 import distsys.smartmed.common.ValidationUtils;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 
@@ -58,13 +56,13 @@ public class SmartMedGUI extends javax.swing.JFrame {
                     .build());
             
             this.jwtToken = response.getToken();
-            resultArea.append("Login successful! Welcome admin\n");
+            resultArea.append("Login successful! Welcome admin :)\n");
             tempChannel.shutdown();
             return true;
         } catch (Exception e) {
             resultArea.append("Login failed: " + e.getMessage() + "\n");
             // Fallback to default token if login fails
-            this.jwtToken = JwtUtil.generateToken(); // Uses parameterless version
+            this.jwtToken = JwtUtil.generateToken("fallback-user");
             return false;
         }
     }
@@ -204,7 +202,7 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     new Thread(() -> {
         try {
-            log("\nFetching record for patient: " + patientId);
+            log("\n===Fetching record for patient: " + patientId + "===\n");
             PatientResponse response = PatientServiceGrpc.newBlockingStub(channel)
                 .getPatientRecord(PatientRequest.newBuilder()
                     .setPatientId(patientId)
@@ -225,7 +223,7 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     private void monitoringBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_monitoringBtnActionPerformed
         // TODO add your handling code here:
-        String patientId = idField.getText().trim();
+       String patientId = idField.getText().trim();
     
     if (!ValidationUtils.isValidPatientId(patientId)) {
         log("\nError: Patient ID must be between " + 
@@ -236,9 +234,8 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     new Thread(() -> {
         try {
-            log("\n=== Starting Vitals Monitoring ===");
-            CountDownLatch latch = new CountDownLatch(1);
-
+            log("\n=== Starting Vitals Monitoring for Patient " + patientId + "===\n");
+            
             MonitoringServiceGrpc.MonitoringServiceStub stub = 
                 MonitoringServiceGrpc.newStub(channel);
 
@@ -259,17 +256,17 @@ public class SmartMedGUI extends javax.swing.JFrame {
                     @Override
                     public void onError(Throwable t) {
                         logClientError("Vitals Monitoring", t);
-                        latch.countDown();
                     }
 
                     @Override
                     public void onCompleted() {
-                        log("Monitoring session ended");
-                        latch.countDown();
+                        log("\nMonitoring session ended\n");
                     }
                 });
 
-            latch.await();
+            Thread.sleep(10000); // Match 10s duration
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             logClientError("Monitoring Setup", e);
         }
@@ -287,54 +284,46 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     new Thread(() -> {
         try {
-            log("\n=== Starting Medication Tracking ===");
-            CountDownLatch latch = new CountDownLatch(1);
-
-            // 1. Create streaming observer
             StreamObserver<MedicationRecord> requestObserver = 
                 MedicationServiceGrpc.newStub(channel).analyzeMedicationSchedule(
                     new StreamObserver<MedicationAnalysis>() {
-                         @Override
-                    public void onNext(MedicationAnalysis analysis) {
-                        log("\n=== MEDICATION ANALYSIS ===");
-                        log(String.format("Adherence: %.1f%%", analysis.getAdherencePercentage()));
-                        log("Taken: %d/%d doses".formatted(
-                            analysis.getTakenDoses(), 
-                            analysis.getTotalDoses()));
-                        log("Summary: " + analysis.getSummary());  // <-- Show the message
-                        log("Missed doses: " + analysis.getMissedDosesList().size());
-                    }
+                        @Override
+                        public void onNext(MedicationAnalysis analysis) {
+                            log("\n=== MEDICATION ANALYSIS ===");
+                            log(String.format("Adherence: %.1f%%", analysis.getAdherencePercentage()));
+                            log("Taken: %d/%d doses".formatted(
+                                analysis.getTakenDoses(), 
+                                analysis.getTotalDoses()));
+                            log("Summary: " + analysis.getSummary());
+                        }
 
                         @Override
                         public void onError(Throwable t) {
                             logClientError("Medication Analysis", t);
-                            latch.countDown();
                         }
 
                         @Override
                         public void onCompleted() {
-                            log("Medication analysis completed");
-                            latch.countDown();
+                            log("\nMedication analysis completed\n");
                         }
                     });
 
-            // 2. Generate and stream sample records
-            String currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-            List<MedicationRecord> records = generatePatientMedications(patientId, currentTime);
+            List<MedicationRecord> records = generatePatientMedications(patientId, 
+                LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
             
-            log("\n=== Streaming Medication Records ===");
+            log("\n=== Streaming Medication Records for Patient " + patientId + "===\n");
             for (MedicationRecord record : records) {
-                requestObserver.onNext(record); // Stream each record
+                requestObserver.onNext(record);
                 log("Sent: " + record.getMedicationName() + 
                     " at " + record.getScheduledTime() + 
-                    " (" + (record.getWasTaken() ? "taken" : "missed") + ")");
+                    (record.getWasTaken() ? "— [taken]" : "— [missed]"));
                 Thread.sleep(500); // Simulate real-time delay
             }
 
-            // 3. Complete the stream
             requestObserver.onCompleted();
-            latch.await();
-
+            Thread.sleep(1000); // Wait for final analysis
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             logClientError("Medication Tracking", e);
         }
@@ -538,10 +527,8 @@ private String[][] getPatientMedicationProfile(String patientId) {
 
     new Thread(() -> {
         try {
-            log("\n=== Starting Rehab Session ===");
-            CountDownLatch latch = new CountDownLatch(1);
+            log("\n=== Starting Rehab Session for Patient " + patientId + "===\n");
 
-            // 1. Create streaming observer
             StreamObserver<ExerciseInput> requestObserver = 
                 RehabServiceGrpc.newStub(channel).liveExerciseFeedback(
                     new StreamObserver<ExerciseFeedback>() {
@@ -561,17 +548,14 @@ private String[][] getPatientMedicationProfile(String patientId) {
                         @Override
                         public void onError(Throwable t) {
                             logClientError("Rehab Feedback", t);
-                            latch.countDown();
                         }
 
                         @Override
                         public void onCompleted() {
                             log("Rehab session ended");
-                            latch.countDown();
                         }
                     });
 
-            // 2. Stream exercise reps
             String[] exercises = {"Squat", "Lunge", "Leg Raise"};
             String exercise = exercises[new Random().nextInt(exercises.length)];
             
@@ -586,14 +570,14 @@ private String[][] getPatientMedicationProfile(String patientId) {
                     .setPostureAngle(angle)
                     .build());
                 
-                log("Sent rep " + i + " - Angle: " + String.format("%.1f°", angle));
+                log("\nSent rep " + i + " - Angle: " + String.format("%.1f°", angle));
                 Thread.sleep(1000); // Realistic delay between reps
             }
 
-            // 3. Complete the stream
             requestObserver.onCompleted();
-            latch.await();
-
+            Thread.sleep(500); // Wait for final report
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             logClientError("Rehab Session", e);
         }
