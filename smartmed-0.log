@@ -1,16 +1,16 @@
-Apr 13, 2025 10:42:04 PM distsys.smartmed.server.SmartMedServer configureLogging
+Apr 13, 2025 10:54:49 PM distsys.smartmed.server.SmartMedServer configureLogging
 INFO: Logging configured successfully
-Apr 13, 2025 10:42:05 PM distsys.smartmed.server.SmartMedServer start
+Apr 13, 2025 10:54:49 PM distsys.smartmed.server.SmartMedServer start
 INFO: Server started on port 50051
-Apr 13, 2025 10:42:30 PM distsys.smartmed.server.AuthServiceImpl login
-INFO: Login attempt for user: admin
-Apr 13, 2025 10:42:31 PM distsys.smartmed.server.AuthServiceImpl login
-INFO: Successful login for: admin
-Apr 13, 2025 10:42:34 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
-INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
-Apr 13, 2025 10:42:34 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [MedicationService] Starting for patient 12
-Apr 13, 2025 10:42:47 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
-INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
-Apr 13, 2025 10:42:47 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [MedicationService] Starting for patient 13
+Apr 13, 2025 10:55:16 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 10:55:16 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: wrong
+Apr 13, 2025 10:55:46 PM distsys.smartmed.common.LoggingUtils logError
+WARNING: [AuthService] Error for patient User: wrong: Invalid credentials for user: wrong

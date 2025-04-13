@@ -1,9 +1,10 @@
 package distsys.smartmed.server;
 
 import com.healthcare.grpc.auth.*;
+import distsys.smartmed.common.LoggingUtils;
 import distsys.smartmed.security.JwtUtil;
-import io.grpc.stub.StreamObserver;
 import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
 import java.util.logging.Logger;
 
 public class AuthServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
@@ -14,23 +15,39 @@ public class AuthServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
     @Override
     public void login(LoginRequest request, StreamObserver<LoginResponse> responseObserver) {
         String username = request.getUsername();
-        logger.info("Login attempt for user: " + username);
-
-        if (EXPECTED_USERNAME.equals(username) && 
-            EXPECTED_PASSWORD.equals(request.getPassword())) {
+        
+        try {
+            // Standardized service start log
+            LoggingUtils.logServiceStart(logger, "AuthService", "User: " + username);
             
-            String token = JwtUtil.generateToken(username);
-            logger.info("Successful login for: " + username);
+            if (EXPECTED_USERNAME.equals(username) && 
+                EXPECTED_PASSWORD.equals(request.getPassword())) {
+                
+                String token = JwtUtil.generateToken(username);
+                
+                responseObserver.onNext(LoginResponse.newBuilder()
+                    .setToken(token)
+                    .setMessage("Login successful")
+                    .build());
+                responseObserver.onCompleted();
+                
+                // Standardized success log
+                LoggingUtils.logServiceEnd(logger, "AuthService", "User: " + username, "Login succeeded");
+                
+            } else {
+                String errorMsg = "Invalid credentials for user: " + username;
+                LoggingUtils.logError(logger, "AuthService", "User: " + username, 
+                    new IllegalArgumentException(errorMsg), true);
+                
+                responseObserver.onError(Status.UNAUTHENTICATED
+                    .withDescription(errorMsg)
+                    .asRuntimeException());
+            }
             
-            responseObserver.onNext(LoginResponse.newBuilder()
-                .setToken(token)
-                .setMessage("Login successful")
-                .build());
-            responseObserver.onCompleted();
-        } else {
-            logger.warning("Failed login attempt for: " + username);
-            responseObserver.onError(Status.UNAUTHENTICATED
-                .withDescription("Invalid credentials")
+        } catch (Exception e) {
+            LoggingUtils.logError(logger, "AuthService", "User: " + username, e, false);
+            responseObserver.onError(Status.INTERNAL
+                .withDescription("Authentication error")
                 .asRuntimeException());
         }
     }
