@@ -6,13 +6,12 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 public class JwtUtil {
-    // Fixed secret key (same for client and server)
     private static final String SECRET_STRING = "smartmed-secret-key-1234567890-abcdefgh";
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_STRING.getBytes());
     private static final long EXPIRATION_TIME = 3600000; // 1 hour
 
     public static String generateToken() {
-        return generateToken("default-client"); // Default username for simple cases
+        return generateToken("default-client");
     }
     
     public static String generateToken(String username) {
@@ -34,6 +33,20 @@ public class JwtUtil {
         } catch (Exception e) {
             System.err.println("[JWT] Invalid token: " + e.getMessage());
             return false;
+        }
+    }
+
+    public static String getUsernameFromToken(String token) {
+        try {
+            return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+        } catch (Exception e) {
+            System.err.println("[JWT] Failed to get username from token: " + e.getMessage());
+            return "unknown";
         }
     }
 }

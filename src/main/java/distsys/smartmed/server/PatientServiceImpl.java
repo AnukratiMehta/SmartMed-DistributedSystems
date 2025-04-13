@@ -9,42 +9,48 @@ package distsys.smartmed.server;
  * @author anukratimehta
  */
 
+
 import com.healthcare.grpc.patient.*;
+import distsys.smartmed.common.ValidationUtils;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class PatientServiceImpl extends PatientServiceGrpc.PatientServiceImplBase {
-    
+    private static final Logger logger = Logger.getLogger(PatientServiceImpl.class.getName());
     
     @Override
     public void getPatientRecord(PatientRequest request, 
                                StreamObserver<PatientResponse> responseObserver) {
         String patientId = request.getPatientId();
+        logger.info("Patient record request received for ID: " + patientId);
         
         try {
-            // Validate ID is numeric and between 1-100
-            int id = Integer.parseInt(patientId);
-            if (id < 1 || id > 100) {
-                responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("ID must be 1-100")
-                    .asRuntimeException());
-                return;
-            }
+            // Modified validation block
+            ValidationUtils.validatePatientId(patientId);
+            int id = Integer.parseInt(patientId); // Keep for hash generation
             
-            // Generate or fetch patient record
             PatientResponse response = generatePatientRecord(patientId);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+            logger.info("Successfully returned record for: " + patientId);
             
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
+            logger.warning("Invalid patient ID: " + e.getMessage());
             responseObserver.onError(Status.INVALID_ARGUMENT
-                .withDescription("Invalid patient ID format")
+                .withDescription(e.getMessage())
+                .asRuntimeException());
+        } catch (Exception e) {
+            logger.severe("Unexpected error: " + e.getMessage());
+            responseObserver.onError(Status.INTERNAL
+                .withDescription("Internal server error")
                 .asRuntimeException());
         }
     }
     
-private PatientResponse generatePatientRecord(String patientId) {
+    private PatientResponse generatePatientRecord(String patientId) {
+        logger.fine("Generating patient record for: " + patientId);
     // Expanded name databases
     String[] firstNames = {
         "John", "Jane", "Robert", "Emily", "Michael", "Sarah", "David", "Lisa",

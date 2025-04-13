@@ -1,47 +1,56 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package distsys.smartmed.server;
 
-/**
- *
- * @author anukratimehta
- */
-
-
 import com.healthcare.grpc.medication.*;
+import distsys.smartmed.common.ValidationUtils;
 import io.grpc.stub.StreamObserver;
 import java.util.*;
+import java.util.logging.Logger;
+import io.grpc.Status;
 
 public class MedicationServiceImpl extends MedicationServiceGrpc.MedicationServiceImplBase {
+    private static final Logger logger = Logger.getLogger(MedicationServiceImpl.class.getName());
 
     @Override
     public StreamObserver<MedicationRecord> analyzeMedicationSchedule(
         StreamObserver<MedicationAnalysis> responseObserver) {
         
         return new StreamObserver<MedicationRecord>() {
-            private final List<MedicationRecord> records = new ArrayList<MedicationRecord>();
+            private final List<MedicationRecord> records = new ArrayList<>();
             private String currentPatientId = null;
 
             @Override
             public void onNext(MedicationRecord record) {
-                records.add(record);
-                if (currentPatientId == null) {
-                    currentPatientId = record.getPatientId();
+                try {
+                    // Added validation
+                    ValidationUtils.validatePatientId(record.getPatientId());
+                    
+                    if (currentPatientId == null) {
+                        currentPatientId = record.getPatientId();
+                        logger.info("Starting medication analysis for patient: " + currentPatientId);
+                    }
+                    records.add(record);
+                    logger.fine("Received medication record: " + record.getMedicationName() + 
+                              " at " + record.getScheduledTime());
+                              
+                } catch (IllegalArgumentException e) {
+                    logger.warning("Invalid medication record: " + e.getMessage());
+                    responseObserver.onError(Status.INVALID_ARGUMENT
+                        .withDescription(e.getMessage())
+                        .asRuntimeException());
                 }
             }
 
             @Override
             public void onError(Throwable t) {
-                System.err.println("Error in medication analysis: " + t.getMessage());
+                logger.severe("Medication analysis error for " + currentPatientId + 
+                            ": " + t.getMessage());
             }
 
             @Override
             public void onCompleted() {
                 int total = records.size();
                 int taken = 0;
-                List<MedicationRecord> missed = new ArrayList<MedicationRecord>();
+                List<MedicationRecord> missed = new ArrayList<>();
                 
                 for (MedicationRecord record : records) {
                     if (record.getWasTaken()) {
@@ -64,6 +73,8 @@ public class MedicationServiceImpl extends MedicationServiceGrpc.MedicationServi
                 
                 responseObserver.onNext(analysis);
                 responseObserver.onCompleted();
+                logger.info("Completed medication analysis for " + currentPatientId + 
+                           ": " + percentage + "% adherence");
             }
             
             private String generateSummary(float percentage, int total) {

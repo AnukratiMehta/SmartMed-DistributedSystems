@@ -1,0 +1,16 @@
+Apr 13, 2025 9:20:39 PM distsys.smartmed.server.SmartMedServer configureLogging
+INFO: Logging configured successfully
+Apr 13, 2025 9:20:39 PM distsys.smartmed.server.SmartMedServer start
+INFO: Server started on port 50051
+Apr 13, 2025 9:20:48 PM distsys.smartmed.server.AuthServiceImpl login
+INFO: Login attempt for user: admin
+Apr 13, 2025 9:20:48 PM distsys.smartmed.server.AuthServiceImpl login
+INFO: Successful login for: admin
+Apr 13, 2025 9:20:57 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 13, 2025 9:20:57 PM distsys.smartmed.server.MonitoringServiceImpl streamVitals
+INFO: Starting vitals stream for patient patient-123 (duration: 10s)
+Apr 13, 2025 9:21:07 PM distsys.smartmed.server.MonitoringServiceImpl streamVitals
+INFO: Completed vitals stream for: patient-123
+Apr 13, 2025 9:27:39 PM distsys.smartmed.server.SmartMedServer lambda$start$0
+INFO: Shutting down server...

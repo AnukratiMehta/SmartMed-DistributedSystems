@@ -1,25 +1,27 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package distsys.smartmed.server;
 
-/**
- *
- * @author anukratimehta
- */
-
 import com.healthcare.grpc.monitoring.*;
+import distsys.smartmed.common.ValidationUtils;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.logging.Logger;
 
 public class MonitoringServiceImpl extends MonitoringServiceGrpc.MonitoringServiceImplBase {
+    private static final Logger logger = Logger.getLogger(MonitoringServiceImpl.class.getName());
+
     @Override
     public void streamVitals(VitalsRequest request, StreamObserver<VitalsUpdate> responseObserver) {
         String patientId = request.getPatientId();
-        int duration = request.getDurationSeconds();
-        System.out.println("[SmartMed] Streaming vitals for patient: " + patientId);
-
+        
         try {
+            // Added validation
+            ValidationUtils.validatePatientId(patientId);
+            
+            int duration = request.getDurationSeconds();
+            logger.info(String.format(
+                "Starting vitals stream for patient %s (duration: %ds)", 
+                patientId, duration));
+
             for (int i = 0; i < duration; i++) {
                 VitalsUpdate update = VitalsUpdate.newBuilder()
                     .setHeartRate(70 + (int)(Math.random() * 10))
@@ -28,10 +30,25 @@ public class MonitoringServiceImpl extends MonitoringServiceGrpc.MonitoringServi
                     .build();
 
                 responseObserver.onNext(update);
+                logger.fine(String.format(
+                    "Sent vitals update for %s: HR=%d, SpO2=%.1f", 
+                    patientId, 
+                    update.getHeartRate(), 
+                    update.getOxygenLevel()));
+                
                 Thread.sleep(1000);
             }
+            logger.info("Completed vitals stream for: " + patientId);
+            
+        } catch (IllegalArgumentException e) {
+            logger.warning("Invalid vitals request: " + e.getMessage());
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
+            return;
         } catch (InterruptedException e) {
-            System.err.println("[SmartMed] Vitals streaming interrupted: " + e.getMessage());
+            logger.warning("Vitals stream interrupted for: " + patientId);
+            Thread.currentThread().interrupt();
         } finally {
             responseObserver.onCompleted();
         }

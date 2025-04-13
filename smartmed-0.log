@@ -1,0 +1,14 @@
+Apr 13, 2025 10:02:26 PM distsys.smartmed.server.SmartMedServer configureLogging
+INFO: Logging configured successfully
+Apr 13, 2025 10:02:27 PM distsys.smartmed.server.SmartMedServer start
+INFO: Server started on port 50051
+Apr 13, 2025 10:02:34 PM distsys.smartmed.server.AuthServiceImpl login
+INFO: Login attempt for user: admin
+Apr 13, 2025 10:02:34 PM distsys.smartmed.server.AuthServiceImpl login
+INFO: Successful login for: admin
+Apr 13, 2025 10:02:37 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 13, 2025 10:02:37 PM distsys.smartmed.server.PatientServiceImpl getPatientRecord
+INFO: Patient record request received for ID: 22
+Apr 13, 2025 10:02:37 PM distsys.smartmed.server.PatientServiceImpl getPatientRecord
+INFO: Successfully returned record for: 22

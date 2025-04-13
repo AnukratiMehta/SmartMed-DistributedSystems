@@ -16,12 +16,7 @@ import com.healthcare.grpc.auth.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import javax.swing.*;
-//import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -29,11 +24,11 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
-import java.awt.BorderLayout;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
 import distsys.smartmed.security.JwtClientInterceptor;
 import distsys.smartmed.security.JwtUtil;
+import distsys.smartmed.common.ValidationUtils;
+import io.grpc.Status;
+
 
 public class SmartMedGUI extends javax.swing.JFrame {
 
@@ -130,12 +125,6 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
         jLabel1.setText("Patient Id:");
 
-        idField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                idFieldActionPerformed(evt);
-            }
-        });
-
         rehabBtn.setText("Start Rehab");
         rehabBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -194,34 +183,32 @@ public class SmartMedGUI extends javax.swing.JFrame {
     private void patientBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_patientBtnActionPerformed
         // TODO add your handling code here:
         String patientId = idField.getText().trim();
-
-        // Input validation
-        try {
-            int id = Integer.parseInt(patientId);
-            if (id < 1 || id > 100) {
-                log("\nError: Patient ID must be between 1-100");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            log("\nError: Please enter a number 1-100");
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between " + 
+                ValidationUtils.PATIENT_ID_MIN + "-" + 
+                ValidationUtils.PATIENT_ID_MAX);
             return;
         }
 
         new Thread(() -> {
             try {
                 log("\nFetching record for patient: " + patientId);
-
                 PatientResponse response = PatientServiceGrpc.newBlockingStub(channel)
-                        .getPatientRecord(PatientRequest.newBuilder()
-                                .setPatientId(patientId)
-                                .build());
+                    .getPatientRecord(PatientRequest.newBuilder()
+                        .setPatientId(patientId)
+                        .build());
 
-                // Display REAL response from server
                 log("Name: " + response.getName());
                 log("Age: " + response.getAge());
                 log("Medication: " + response.getCurrentMedication());
                 log("History: " + response.getMedicalHistoryList());
-
+            } catch (io.grpc.StatusRuntimeException e) {
+                if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
+                    log("Validation Error: " + e.getStatus().getDescription());
+                } else {
+                    log("Server Error: " + e.getMessage());
+                }
             } catch (Exception e) {
                 log("Error: " + e.getMessage());
             }
@@ -230,40 +217,49 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     private void monitoringBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_monitoringBtnActionPerformed
         // TODO add your handling code here:
+        String patientId = idField.getText().trim();
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between " + 
+                ValidationUtils.PATIENT_ID_MIN + "-" + 
+                ValidationUtils.PATIENT_ID_MAX);
+            return;
+        }
+
         new Thread(() -> {
             try {
                 log("\n=== Starting Vitals Monitoring ===");
                 CountDownLatch latch = new CountDownLatch(1);
 
                 MonitoringServiceGrpc.MonitoringServiceStub stub
-                        = MonitoringServiceGrpc.newStub(channel);
+                    = MonitoringServiceGrpc.newStub(channel);
 
                 stub.streamVitals(
-                        VitalsRequest.newBuilder()
-                                .setPatientId("patient-123")
-                                .setDurationSeconds(10) // Monitor for 10 seconds
-                                .build(),
-                        new StreamObserver<VitalsUpdate>() {
-                    @Override
-                    public void onNext(VitalsUpdate update) {
-                        log(String.format("Heart Rate: %d | Oxygen: %.1f%% | Time: %tT",
+                    VitalsRequest.newBuilder()
+                        .setPatientId(patientId)
+                        .setDurationSeconds(10)
+                        .build(),
+                    new StreamObserver<VitalsUpdate>() {
+                        @Override
+                        public void onNext(VitalsUpdate update) {
+                            log(String.format("Heart Rate: %d | Oxygen: %.1f%% | Time: %tT",
                                 update.getHeartRate(),
                                 update.getOxygenLevel(),
                                 update.getTimestamp()));
-                    }
+                        }
 
-                    @Override
-                    public void onError(Throwable t) {
-                        log("Monitoring error: " + t.getMessage());
-                        latch.countDown();
-                    }
+                        @Override
+                        public void onError(Throwable t) {
+                            log("Monitoring error: " + t.getMessage());
+                            latch.countDown();
+                        }
 
-                    @Override
-                    public void onCompleted() {
-                        log("Monitoring session ended");
-                        latch.countDown();
-                    }
-                });
+                        @Override
+                        public void onCompleted() {
+                            log("Monitoring session ended");
+                            latch.countDown();
+                        }
+                    });
 
                 latch.await();
             } catch (Exception ex) {
@@ -272,90 +268,34 @@ public class SmartMedGUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_monitoringBtnActionPerformed
 
-    private void idFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_idFieldActionPerformed
-        // TODO add your handling code here:
-        String patientId = idField.getText().trim();
-
-        // Client-side validation
-        try {
-            int idNum = Integer.parseInt(patientId);
-            if (idNum < 1 || idNum > 100) {
-                log("\nError: Patient ID must be between 1-100");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            log("\nError: Patient ID must be a number (1-100)");
-            return;
-        }
-
-        new Thread(() -> {
-            try {
-                log("\n=== Fetching Record for Patient: " + patientId + " ===");
-                PatientServiceGrpc.PatientServiceBlockingStub stub
-                        = PatientServiceGrpc.newBlockingStub(channel);
-
-                // Get response from server (no client-side generation)
-                PatientResponse response = stub.getPatientRecord(
-                        PatientRequest.newBuilder()
-                                .setPatientId(patientId)
-                                .build());
-
-                // Server will always return a valid response or error
-                log("Patient ID: " + response.getPatientId());
-                log("Name: " + response.getName());
-                log("Age: " + response.getAge());
-                log("Current Medication: " + response.getCurrentMedication());
-                log("Medical History: " + response.getMedicalHistoryList());
-
-            } catch (io.grpc.StatusRuntimeException e) {
-                log("Server Error: " + e.getStatus().getDescription());
-            } catch (Exception ex) {
-                log("Error: " + ex.getMessage());
-            }
-        }).start();
-    }//GEN-LAST:event_idFieldActionPerformed
-
     private void medicationBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_medicationBtnActionPerformed
         // TODO add your handling code here:
     String patientId = idField.getText().trim();
-    String currentDateTime = java.time.LocalDateTime.now()
-        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-
-    try {
-        int id = Integer.parseInt(patientId);
-        if (id < 1 || id > 100) {
-            log("\nError: Patient ID must be 1-100");
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between " + 
+                ValidationUtils.PATIENT_ID_MIN + "-" + 
+                ValidationUtils.PATIENT_ID_MAX);
             return;
         }
 
         new Thread(() -> {
             try {
-                // 1. Initialize tracking
-                log("\n=== Starting Medication Tracking at " + currentDateTime + " ===");
+                 String currentTime = LocalTime.now()
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
+                 
+            log("\n=== Starting Medication Tracking at " + currentTime + " ===");
                 CountDownLatch latch = new CountDownLatch(1);
 
-                // 2. Generate patient-specific medication schedule
-                String currentTime = java.time.LocalTime.now()
-                    .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-                List<MedicationRecord> records = generatePatientMedications(patientId, currentTime);
-                if (records.isEmpty()) {
-                    log("No medications scheduled for today");
-                    return;
-                }
-
-                // 3. Prepare streaming
                 StreamObserver<MedicationRecord> requestObserver = 
                     MedicationServiceGrpc.newStub(channel).analyzeMedicationSchedule(
                         new StreamObserver<MedicationAnalysis>() {
                             @Override
                             public void onNext(MedicationAnalysis analysis) {
-                                log("\n=== Server Analysis Received ===");
-                                log(String.format("Adherence: %.1f%%", 
-                                    analysis.getAdherencePercentage()));
-                                log("Doses Taken: " + analysis.getTakenDoses() + 
-                                    "/" + analysis.getTotalDoses());
+                                log("\n=== Analysis ===");
+                                log(String.format("Adherence: %.1f%%", analysis.getAdherencePercentage()));
+                                log("Doses Taken: " + analysis.getTakenDoses() + "/" + analysis.getTotalDoses());
                                 log("Summary: " + analysis.getSummary());
-                                log("---");
                             }
 
                             @Override
@@ -370,33 +310,18 @@ public class SmartMedGUI extends javax.swing.JFrame {
                             }
                         });
 
-                // 4. Stream records
-                log("\n=== Streaming Medication Records ===");
+            List<MedicationRecord> records = generatePatientMedications(patientId, currentTime);
                 for (MedicationRecord record : records) {
-                    String status = record.getWasTaken() ? 
-                        "(Taken at " + record.getActualTimeTaken() + ")" : 
-                        "(Missed - scheduled at " + record.getScheduledTime() + ")";
-                    log("Sending: " + record.getMedicationName() + " " + 
-                        record.getDosageMg() + "mg " + status);
-                    
                     requestObserver.onNext(record);
-                    Thread.sleep(300); // Simulate network delay
+                    Thread.sleep(300);
                 }
-
-                // 5. Complete
-                log("\nFinished streaming " + records.size() + " records");
                 requestObserver.onCompleted();
                 latch.await();
-
+                
             } catch (Exception ex) {
                 log("Medication tracking error: " + ex.getMessage());
             }
         }).start();
-
-    } catch (NumberFormatException e) {
-        log("\nError: Invalid patient ID format");
-    }
-
 }
 
 private List<MedicationRecord> generatePatientMedications(String patientId, String currentTime) {
@@ -588,122 +513,66 @@ private String[][] getPatientMedicationProfile(String patientId) {
     private void rehabBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rehabBtnActionPerformed
         // TODO add your handling code here:
     String patientId = idField.getText().trim();
-    
-    // Input validation
-    try {
-        int id = Integer.parseInt(patientId);
-        if (id < 1 || id > 100) {
-            log("\nError: Patient ID must be between 1-100");
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between " + 
+                ValidationUtils.PATIENT_ID_MIN + "-" + 
+                ValidationUtils.PATIENT_ID_MAX);
             return;
         }
-    } catch (NumberFormatException e) {
-        log("\nError: Please enter a number 1-100");
-        return;
-    }
 
-    new Thread(() -> {
-        try {
-            log("\n=== Starting Rehab Exercise Feedback ===");
-            
-            // Create a latch to wait for completion
-            CountDownLatch finishLatch = new CountDownLatch(1);
-            
-            // Create async stub
-            RehabServiceGrpc.RehabServiceStub stub = RehabServiceGrpc.newStub(channel);
-            
-            // Create response observer
-            StreamObserver<ExerciseFeedback> responseObserver = new StreamObserver<ExerciseFeedback>() {
-                @Override
-                public void onNext(ExerciseFeedback feedback) {
-                    if (feedback.getRepetitionNumber() == 0) {
-                        // This is the summary message
-                        log("\n=== EXERCISE SUMMARY ===");
-                        log(feedback.getMessage());
-                        log("========================");
-                    } else {
-                        // Regular feedback message
-                        String formattedMessage = String.format(
-                            "[Rep %d] %s - %s", 
-                            feedback.getRepetitionNumber(),
-                            feedback.getSeverity().toUpperCase(),
-                            feedback.getMessage()
-                        );
-                        log(formattedMessage);
-                    }
-                }
+        new Thread(() -> {
+            try {
+                log("\n=== Starting Rehab Session ===");
+                CountDownLatch latch = new CountDownLatch(1);
 
-                @Override
-                public void onError(Throwable t) {
-                    log("Error in exercise feedback: " + t.getMessage());
-                    finishLatch.countDown();
-                }
+                StreamObserver<ExerciseInput> requestObserver = 
+                    RehabServiceGrpc.newStub(channel).liveExerciseFeedback(
+                        new StreamObserver<ExerciseFeedback>() {
+                            @Override
+                            public void onNext(ExerciseFeedback feedback) {
+                                if (feedback.getRepetitionNumber() == 0) {
+                                    log("\n=== SUMMARY ===\n" + feedback.getMessage());
+                                } else {
+                                    log(String.format("[Rep %d] %s - %s",
+                                        feedback.getRepetitionNumber(),
+                                        feedback.getSeverity().toUpperCase(),
+                                        feedback.getMessage()));
+                                }
+                            }
 
-                @Override
-                public void onCompleted() {
-                    log("\nSession ended. Thank you for exercising!");
-                    finishLatch.countDown();
-                }
-            };
-            
-            // Create request observer
-            StreamObserver<ExerciseInput> requestObserver = stub.liveExerciseFeedback(responseObserver);
-            
-            // Simulate exercise data
-            String[] exercises = {"Squat", "Lunge", "Leg Raise", "Arm Curl", "Shoulder Press"};
-            String selectedExercise = exercises[new Random().nextInt(exercises.length)];
-            
-            log("Starting exercise: " + selectedExercise + " for patient " + patientId);
-            log("Performing 10 repetitions...\n");
-            
-            // Simulate 10 repetitions with random posture angles
-            for (int i = 1; i <= 10; i++) {
-                try {
-                    // Generate random posture angle between 20-50 degrees
-                    double postureAngle = 20 + new Random().nextDouble() * 30;
-                    
-                    // Create exercise input
+                            @Override
+                            public void onError(Throwable t) {
+                                log("Rehab error: " + t.getMessage());
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onCompleted() {
+                                log("Session completed");
+                                latch.countDown();
+                            }
+                        });
+
+                // Simulate exercise reps
+                for (int i = 1; i <= 10; i++) {
                     ExerciseInput input = ExerciseInput.newBuilder()
                         .setPatientId(patientId)
-                        .setExerciseName(selectedExercise)
+                        .setExerciseName("Squat")
                         .setRepetitionNumber(i)
-                        .setPostureAngle(postureAngle)
-                        .setNotes("Repetition " + i)
+                        .setPostureAngle(25 + new Random().nextDouble() * 30)
                         .build();
                     
-                    // Send to server
                     requestObserver.onNext(input);
-                    
-                    // Log what we're sending
-                    log(String.format(
-                        "Sent rep %d - Angle: %.1f°", 
-                        i, postureAngle
-                    ));
-                    
-                    // Wait between reps
                     Thread.sleep(1000);
-                    
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log("Exercise interrupted: " + e.getMessage());
-                    break;
-                } catch (Exception e) {
-                    log("Error during exercise: " + e.getMessage());
-                    break;
                 }
+                requestObserver.onCompleted();
+                latch.await();
+                
+            } catch (Exception ex) {
+                log("Rehab session error: " + ex.getMessage());
             }
-            
-            // Complete the stream
-            requestObserver.onCompleted();
-            
-            // Wait for completion
-            finishLatch.await();
-            
-        } catch (Exception e) {
-            log("Error in rehab session: " + e.getMessage());
-        }
-    }).start();
-
-
+        }).start();
     }//GEN-LAST:event_rehabBtnActionPerformed
 
     /**

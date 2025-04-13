@@ -1,79 +1,58 @@
 package distsys.smartmed.server;
 
-import distsys.smartmed.security.JwtServerInterceptor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.io.IOException;
-import java.net.InetAddress;
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
+import java.util.logging.*;
+import distsys.smartmed.security.JwtServerInterceptor;
+
 
 public class SmartMedServer {
-    private static final String SERVICE_TYPE = "_smartmed._tcp.local.";
-    private JmDNS jmdns;
+    private static final Logger logger = Logger.getLogger(SmartMedServer.class.getName());
     private Server server;
-    private final int PORT = 50051;
+
+    static {
+        configureLogging();
+    }
+
+    private static void configureLogging() {
+        try {
+            FileHandler fileHandler = new FileHandler("smartmed-%g.log", 1000000, 3);
+            fileHandler.setFormatter(new SimpleFormatter());
+            Logger.getLogger("").addHandler(fileHandler);
+            logger.info("Logging configured successfully");
+        } catch (IOException e) {
+            System.err.println("Failed to configure logging: " + e.getMessage());
+        }
+    }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        SmartMedServer smartMedServer = new SmartMedServer();
-        smartMedServer.start();
-        smartMedServer.blockUntilShutdown();
+        SmartMedServer serverInstance = new SmartMedServer();
+        serverInstance.start();
+        serverInstance.blockUntilShutdown();
     }
 
     private void start() throws IOException {
-        jmdns = JmDNS.create(InetAddress.getByName("0.0.0.0"));
-        
-        // Register all services
-        registerService("AuthService");
-        registerService("PatientService");
-        registerService("MonitoringService");
-        registerService("MedicationService");
-        registerService("RehabService");
-
-        // Build server with JWT interceptor
-        server = ServerBuilder.forPort(PORT)
-            .addService(new AuthServiceImpl()) 
-            .intercept(new JwtServerInterceptor())
+        int port = 50051;
+        server = ServerBuilder.forPort(port)
+            .addService(new AuthServiceImpl())
             .addService(new PatientServiceImpl())
             .addService(new MonitoringServiceImpl())
             .addService(new MedicationServiceImpl())
             .addService(new RehabServiceImpl())
+            .intercept(new JwtServerInterceptor())
             .build()
             .start();
-
-        System.out.println("Server started on port " + PORT + " with services:");
-        System.out.println("- AuthService (login)");
-        System.out.println("- PatientService");
-        System.out.println("- MonitoringService");
-        System.out.println("- MedicationService");
-        System.out.println("- RehabService");
-
+        
+        logger.info("Server started on port " + port);
+        
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Shutting down server...");
+            logger.info("Shutting down server...");
             stop();
         }));
     }
 
-    private void registerService(String serviceName) throws IOException {
-        ServiceInfo serviceInfo = ServiceInfo.create(
-            SERVICE_TYPE,
-            serviceName,
-            PORT,
-            serviceName.equals("AuthService") ? "Authentication service" : "SmartMed service"
-        );
-        jmdns.registerService(serviceInfo);
-        System.out.println("Registered: " + serviceName);
-    }
-
     private void stop() {
-        if (jmdns != null) {
-            jmdns.unregisterAllServices();
-            try {
-                jmdns.close();
-            } catch (IOException e) {
-                System.err.println("Error closing JmDNS: " + e.getMessage());
-            }
-        }
         if (server != null) {
             server.shutdown();
         }
