@@ -27,34 +27,36 @@ import distsys.smartmed.security.JwtClientInterceptor;
 import distsys.smartmed.security.JwtUtil;
 import distsys.smartmed.common.ValidationUtils;
 import io.grpc.StatusRuntimeException;
-
+import javax.swing.SwingUtilities;
 
 public class SmartMedGUI extends javax.swing.JFrame {
 
     private ManagedChannel channel;
     private String jwtToken;
+    private volatile boolean isServiceRunning = false;
+    private final Object serviceLock = new Object();
 
     public SmartMedGUI() {
         initComponents();
         initializeGRPCChannel();
         idField.requestFocusInWindow();
     }
-    
+
     private boolean performLogin() {
         try {
             // First create unauthenticated channel
             ManagedChannel tempChannel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                .usePlaintext()
-                .build();
-            
+                    .usePlaintext()
+                    .build();
+
             AuthServiceGrpc.AuthServiceBlockingStub authStub = AuthServiceGrpc.newBlockingStub(tempChannel);
-            
+
             LoginResponse response = authStub.login(
-                LoginRequest.newBuilder()
-                    .setUsername("admin")
-                    .setPassword("smartmed123")
-                    .build());
-            
+                    LoginRequest.newBuilder()
+                            .setUsername("admin")
+                            .setPassword("smartmed123")
+                            .build());
+
             this.jwtToken = response.getToken();
             resultArea.append("Login successful! Welcome admin :)\n");
             tempChannel.shutdown();
@@ -69,12 +71,12 @@ public class SmartMedGUI extends javax.swing.JFrame {
 
     private void initializeGRPCChannel() {
         performLogin(); // Get token first
-        
+
         // Create authenticated channel
         this.channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-            .intercept(new JwtClientInterceptor(jwtToken))
-            .usePlaintext()
-            .build();
+                .intercept(new JwtClientInterceptor(jwtToken))
+                .usePlaintext()
+                .build();
     }
 
     /**
@@ -137,29 +139,32 @@ public class SmartMedGUI extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jScrollPane1)
             .addGroup(layout.createSequentialGroup()
-                .addGap(20, 20, 20)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel1)
-                    .addComponent(medicationBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(patientBtn))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(idField)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 89, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(rehabBtn)
-                            .addComponent(monitoringBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(55, 55, 55)
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(idField)
+                        .addGap(35, 35, 35))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 20, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(medicationBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
+                            .addComponent(patientBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(236, 236, 236)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(monitoringBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
+                            .addComponent(rehabBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addGap(20, 20, 20))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addContainerGap(18, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(idField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(monitoringBtn)
                     .addComponent(patientBtn))
@@ -174,414 +179,471 @@ public class SmartMedGUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void log(String message) {
-        resultArea.append(message + "\n");
-        resultArea.setCaretPosition(resultArea.getDocument().getLength());
-    }
+private void handleServiceRequest(Runnable serviceAction) {
     
-    private void logClientError(String context, Throwable t) {
-    String message;
-    if (t instanceof StatusRuntimeException) {
-        message = ((StatusRuntimeException) t).getStatus().getDescription();
-    } else {
-        message = t.getMessage();
-    }
-    resultArea.append(String.format("[ERROR] %s: %s\n", context, message));
-}
-
-    private void patientBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_patientBtnActionPerformed
-        // TODO add your handling code here:
-        String patientId = idField.getText().trim();
-    
+    // Validate first before setting service as running
+    String patientId = idField.getText().trim();
     if (!ValidationUtils.isValidPatientId(patientId)) {
         log("\nError: Patient ID must be between " + 
             ValidationUtils.PATIENT_ID_MIN + "-" + 
             ValidationUtils.PATIENT_ID_MAX);
-        return;
+        return; // Return without changing isServiceRunning
+    }
+    
+    // Only set as running after validation passes
+    setServiceRunning(true);
+    
+    try {
+        serviceAction.run();
+    } catch (Exception e) {
+        setServiceRunning(false);
+        throw e;
+    }
+}
+
+private void setServiceRunning(boolean running) {
+    synchronized (serviceLock) {
+        isServiceRunning = running;
+        SwingUtilities.invokeLater(() -> {
+            patientBtn.setEnabled(!running);
+            monitoringBtn.setEnabled(!running);
+            medicationBtn.setEnabled(!running);
+            rehabBtn.setEnabled(!running);
+            
+            if (!running) {
+                idField.setEnabled(true);
+            }
+        });
+    }
+}
+   private void log(String message) {
+    SwingUtilities.invokeLater(() -> {
+        resultArea.append(message + "\n");
+        resultArea.setCaretPosition(resultArea.getDocument().getLength());
+    });
+}
+
+    private void logClientError(String context, Throwable t) {
+        String message;
+        if (t instanceof StatusRuntimeException) {
+            message = ((StatusRuntimeException) t).getStatus().getDescription();
+        } else {
+            message = t.getMessage();
+        }
+        resultArea.append(String.format("[ERROR] %s: %s\n", context, message));
     }
 
-    new Thread(() -> {
-        try {
-            log("\n===Fetching record for patient: " + patientId + "===\n");
-            PatientResponse response = PatientServiceGrpc.newBlockingStub(channel)
-                .getPatientRecord(PatientRequest.newBuilder()
-                    .setPatientId(patientId)
-                    .build());
-
-            log("Name: " + response.getName());
-            log("Age: " + response.getAge());
-            log("Medication: " + response.getCurrentMedication());
-            log("History: " + response.getMedicalHistoryList());
-
-        } catch (StatusRuntimeException e) {
-            logClientError("Patient Records", e);
-        } catch (Exception e) {
-            logClientError("Unexpected Error", e);
+    private void patientBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_patientBtnActionPerformed
+        // TODO add your handling code here:
+         handleServiceRequest(() -> {
+        String patientId = idField.getText().trim();
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between " + 
+                ValidationUtils.PATIENT_ID_MIN + "-" + 
+                ValidationUtils.PATIENT_ID_MAX);
+            return;
         }
-    }).start();
+
+        new Thread(() -> {
+            try {
+                log("\nFetching record for patient: " + patientId);
+                PatientResponse response = PatientServiceGrpc.newBlockingStub(channel)
+                    .getPatientRecord(PatientRequest.newBuilder()
+                        .setPatientId(patientId)
+                        .build());
+
+                log("Name: " + response.getName());
+                log("Age: " + response.getAge());
+                log("Medication: " + response.getCurrentMedication());
+                log("History: " + response.getMedicalHistoryList());
+            } catch (StatusRuntimeException e) {
+                logClientError("Patient Records", e);
+            } catch (Exception e) {
+                logClientError("Unexpected Error", e);
+            } finally {
+                setServiceRunning(false);
+            }
+        }).start();
+    });
     }//GEN-LAST:event_patientBtnActionPerformed
 
     private void monitoringBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_monitoringBtnActionPerformed
         // TODO add your handling code here:
-       String patientId = idField.getText().trim();
+       handleServiceRequest(() -> {
+        String patientId = idField.getText().trim();
     
-    if (!ValidationUtils.isValidPatientId(patientId)) {
-        log("\nError: Patient ID must be between " + 
-            ValidationUtils.PATIENT_ID_MIN + "-" + 
-            ValidationUtils.PATIENT_ID_MAX);
-        return;
-    }
-
-    new Thread(() -> {
-        try {
-            log("\n=== Starting Vitals Monitoring for Patient " + patientId + "===\n");
-            
-            MonitoringServiceGrpc.MonitoringServiceStub stub = 
-                MonitoringServiceGrpc.newStub(channel);
-
-            stub.streamVitals(
-                VitalsRequest.newBuilder()
-                    .setPatientId(patientId)
-                    .setDurationSeconds(10)
-                    .build(),
-                new StreamObserver<VitalsUpdate>() {
-                    @Override
-                    public void onNext(VitalsUpdate update) {
-                        log(String.format("Heart Rate: %d | Oxygen: %.1f%% | Time: %tT",
-                            update.getHeartRate(),
-                            update.getOxygenLevel(),
-                            update.getTimestamp()));
-                    }
-
-                    @Override
-                    public void onError(Throwable t) {
-                        logClientError("Vitals Monitoring", t);
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        log("\nMonitoring session ended\n");
-                    }
-                });
-
-            Thread.sleep(10000); // Match 10s duration
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            logClientError("Monitoring Setup", e);
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between " + 
+                ValidationUtils.PATIENT_ID_MIN + "-" + 
+                ValidationUtils.PATIENT_ID_MAX);
+            return;
         }
-    }).start();
-    }//GEN-LAST:event_monitoringBtnActionPerformed
 
-    private void medicationBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_medicationBtnActionPerformed
-        // TODO add your handling code here:
-   String patientId = idField.getText().trim();
-    
-    if (!ValidationUtils.isValidPatientId(patientId)) {
-        log("\nError: Patient ID must be between 1-100");
-        return;
-    }
+        new Thread(() -> {
+            try {
+                log("\n=== Starting Vitals Monitoring ===");
+                
+                MonitoringServiceGrpc.MonitoringServiceStub stub = 
+                    MonitoringServiceGrpc.newStub(channel);
 
-    new Thread(() -> {
-        try {
-            StreamObserver<MedicationRecord> requestObserver = 
-                MedicationServiceGrpc.newStub(channel).analyzeMedicationSchedule(
-                    new StreamObserver<MedicationAnalysis>() {
+                stub.streamVitals(
+                    VitalsRequest.newBuilder()
+                        .setPatientId(patientId)
+                        .setDurationSeconds(10)
+                        .build(),
+                    new StreamObserver<VitalsUpdate>() {
                         @Override
-                        public void onNext(MedicationAnalysis analysis) {
-                            log("\n=== MEDICATION ANALYSIS ===");
-                            log(String.format("Adherence: %.1f%%", analysis.getAdherencePercentage()));
-                            log("Taken: %d/%d doses".formatted(
-                                analysis.getTakenDoses(), 
-                                analysis.getTotalDoses()));
-                            log("Summary: " + analysis.getSummary());
+                        public void onNext(VitalsUpdate update) {
+                            log(String.format("Heart Rate: %d | Oxygen: %.1f%% | Time: %tT",
+                                update.getHeartRate(),
+                                update.getOxygenLevel(),
+                                update.getTimestamp()));
                         }
 
                         @Override
                         public void onError(Throwable t) {
-                            logClientError("Medication Analysis", t);
+                            logClientError("Vitals Monitoring", t);
                         }
 
                         @Override
                         public void onCompleted() {
-                            log("\nMedication analysis completed\n");
+                            log("Monitoring session ended");
                         }
                     });
 
-            List<MedicationRecord> records = generatePatientMedications(patientId, 
-                LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
-            
-            log("\n=== Streaming Medication Records for Patient " + patientId + "===\n");
-            for (MedicationRecord record : records) {
-                requestObserver.onNext(record);
-                log("Sent: " + record.getMedicationName() + 
-                    " at " + record.getScheduledTime() + 
-                    (record.getWasTaken() ? "— [taken]" : "— [missed]"));
-                Thread.sleep(500); // Simulate real-time delay
+                Thread.sleep(10000); // Match 10s duration
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                logClientError("Monitoring Setup", e);
+            } finally {
+                setServiceRunning(false);
             }
+        }).start();
+    });
+    }//GEN-LAST:event_monitoringBtnActionPerformed
 
-            requestObserver.onCompleted();
-            Thread.sleep(1000); // Wait for final analysis
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            logClientError("Medication Tracking", e);
+    private void medicationBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_medicationBtnActionPerformed
+        // TODO add your handling code here:
+        handleServiceRequest(() -> {
+        String patientId = idField.getText().trim();
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between 1-100");
+            return;
         }
-    }).start();
-}
 
-private List<MedicationRecord> generatePatientMedications(String patientId, String currentTime) {
-    List<MedicationRecord> records = new ArrayList<>();
-    Random rand = new Random(patientId.hashCode());
-    
-    try {
-        // Parse current time
-        LocalTime now = LocalTime.parse(currentTime, DateTimeFormatter.ofPattern("HH:mm"));
-        
-        // Get patient's medication profile
-        String[][] medicationProfile = getPatientMedicationProfile(patientId);
-        
-        // First pass: Collect all eligible medications
-        List<MedicationRecord> allEligible = new ArrayList<>();
-        
-        for (String[] med : medicationProfile) {
-            String[] times = med[2].split(",");
-            for (String time : times) {
-                LocalTime scheduledTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+        new Thread(() -> {
+            try {
+                log("\n=== Starting Medication Tracking ===");
+
+                StreamObserver<MedicationRecord> requestObserver = 
+                    MedicationServiceGrpc.newStub(channel).analyzeMedicationSchedule(
+                        new StreamObserver<MedicationAnalysis>() {
+                            @Override
+                            public void onNext(MedicationAnalysis analysis) {
+                                log("\n=== MEDICATION ANALYSIS ===");
+                                log(String.format("Adherence: %.1f%%", analysis.getAdherencePercentage()));
+                                log("Taken: %d/%d doses".formatted(
+                                    analysis.getTakenDoses(), 
+                                    analysis.getTotalDoses()));
+                                log("Summary: " + analysis.getSummary());
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                logClientError("Medication Analysis", t);
+                            }
+
+                            @Override
+                            public void onCompleted() {
+                                log("Medication analysis completed");
+                            }
+                        });
+
+                List<MedicationRecord> records = generatePatientMedications(patientId, 
+                    LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
                 
-                if (!scheduledTime.isAfter(now)) {
-                    boolean taken = rand.nextFloat() > 0.3; // 70% chance taken
-                    String actualTime = taken ? 
-                        scheduledTime.plusMinutes(rand.nextInt(61) - 30) // ±30 min variation
-                            .format(DateTimeFormatter.ofPattern("HH:mm")) : "";
-                    
-                    allEligible.add(MedicationRecord.newBuilder()
-                        .setPatientId(patientId)
-                        .setMedicationName(med[0])
-                        .setDosageMg(Float.parseFloat(med[1]))
-                        .setScheduledTime(time)
-                        .setWasTaken(taken)
-                        .setActualTimeTaken(actualTime)
-                        .build());
+                log("\n=== Streaming Medication Records ===");
+                for (MedicationRecord record : records) {
+                    requestObserver.onNext(record);
+                    log("Sent: " + record.getMedicationName() + 
+                        " at " + record.getScheduledTime() + 
+                        " (" + (record.getWasTaken() ? "taken" : "missed") + ")");
+                    Thread.sleep(500);
                 }
+
+                requestObserver.onCompleted();
+                Thread.sleep(1000); // Wait for final analysis
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                logClientError("Medication Tracking", e);
+            } finally {
+                setServiceRunning(false);
             }
-        }
-        
-        // Sort by scheduled time
-        Collections.sort(allEligible, new Comparator<MedicationRecord>() {
-            @Override
-            public int compare(MedicationRecord a, MedicationRecord b) {
-                return a.getScheduledTime().compareTo(b.getScheduledTime());
-            }
-        });
-        
-        // Use eligible records, ensuring no duplicates
-        records = new ArrayList<>(allEligible);
-        
-        // If we need more records to reach minimum of 3, add fallback records
-        if (records.size() < 3) {
-            // Simple fallback medications
-            String[][] fallbackMeds = {
-                {"Vitamin C", "500", "06:00"},
-                {"Vitamin B12", "500", "07:00"},
-                {"Iron", "65", "08:00"},
-                {"Omega-3", "1000", "12:00"},
-                {"Folic Acid", "400", "09:00"},
-                {"Vitamin E", "400", "10:00"},
-                {"Biotin", "300", "11:00"}
-            };
-            
-            for (String[] med : fallbackMeds) {
-                if (records.size() >= 3) break;
-                
-                // Create a new record
-                boolean taken = rand.nextBoolean();
-                String time = med[2];
-                String actualTime = taken ? 
-                    LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
-                        .plusMinutes(rand.nextInt(31))
-                        .format(DateTimeFormatter.ofPattern("HH:mm")) : "";
-                
-                MedicationRecord newRecord = MedicationRecord.newBuilder()
-                    .setPatientId(patientId)
-                    .setMedicationName(med[0])
-                    .setDosageMg(Float.parseFloat(med[1]))
-                    .setScheduledTime(time)
-                    .setWasTaken(taken)
-                    .setActualTimeTaken(actualTime)
-                    .build();
-                
-                // Simple check to avoid adding exactly the same record
-                boolean isDuplicate = false;
-                for (MedicationRecord existingRecord : records) {
-                    if (existingRecord.getMedicationName().equals(newRecord.getMedicationName()) &&
-                        existingRecord.getScheduledTime().equals(newRecord.getScheduledTime())) {
-                        isDuplicate = true;
-                        break;
+        }).start();
+    });
+    }
+
+    private List<MedicationRecord> generatePatientMedications(String patientId, String currentTime) {
+        List<MedicationRecord> records = new ArrayList<>();
+        Random rand = new Random(patientId.hashCode());
+
+        try {
+            // Parse current time
+            LocalTime now = LocalTime.parse(currentTime, DateTimeFormatter.ofPattern("HH:mm"));
+
+            // Get patient's medication profile
+            String[][] medicationProfile = getPatientMedicationProfile(patientId);
+
+            // First pass: Collect all eligible medications
+            List<MedicationRecord> allEligible = new ArrayList<>();
+
+            for (String[] med : medicationProfile) {
+                String[] times = med[2].split(",");
+                for (String time : times) {
+                    LocalTime scheduledTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+
+                    if (!scheduledTime.isAfter(now)) {
+                        boolean taken = rand.nextFloat() > 0.3; // 70% chance taken
+                        String actualTime = taken
+                                ? scheduledTime.plusMinutes(rand.nextInt(61) - 30) // ±30 min variation
+                                        .format(DateTimeFormatter.ofPattern("HH:mm")) : "";
+
+                        allEligible.add(MedicationRecord.newBuilder()
+                                .setPatientId(patientId)
+                                .setMedicationName(med[0])
+                                .setDosageMg(Float.parseFloat(med[1]))
+                                .setScheduledTime(time)
+                                .setWasTaken(taken)
+                                .setActualTimeTaken(actualTime)
+                                .build());
                     }
                 }
-                
-                if (!isDuplicate) {
-                    records.add(newRecord);
+            }
+
+            // Sort by scheduled time
+            Collections.sort(allEligible, new Comparator<MedicationRecord>() {
+                @Override
+                public int compare(MedicationRecord a, MedicationRecord b) {
+                    return a.getScheduledTime().compareTo(b.getScheduledTime());
+                }
+            });
+
+            // Use eligible records, ensuring no duplicates
+            records = new ArrayList<>(allEligible);
+
+            // If we need more records to reach minimum of 3, add fallback records
+            if (records.size() < 3) {
+                // Simple fallback medications
+                String[][] fallbackMeds = {
+                    {"Vitamin C", "500", "06:00"},
+                    {"Vitamin B12", "500", "07:00"},
+                    {"Iron", "65", "08:00"},
+                    {"Omega-3", "1000", "12:00"},
+                    {"Folic Acid", "400", "09:00"},
+                    {"Vitamin E", "400", "10:00"},
+                    {"Biotin", "300", "11:00"}
+                };
+
+                for (String[] med : fallbackMeds) {
+                    if (records.size() >= 3) {
+                        break;
+                    }
+
+                    // Create a new record
+                    boolean taken = rand.nextBoolean();
+                    String time = med[2];
+                    String actualTime = taken
+                            ? LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
+                                    .plusMinutes(rand.nextInt(31))
+                                    .format(DateTimeFormatter.ofPattern("HH:mm")) : "";
+
+                    MedicationRecord newRecord = MedicationRecord.newBuilder()
+                            .setPatientId(patientId)
+                            .setMedicationName(med[0])
+                            .setDosageMg(Float.parseFloat(med[1]))
+                            .setScheduledTime(time)
+                            .setWasTaken(taken)
+                            .setActualTimeTaken(actualTime)
+                            .build();
+
+                    // Simple check to avoid adding exactly the same record
+                    boolean isDuplicate = false;
+                    for (MedicationRecord existingRecord : records) {
+                        if (existingRecord.getMedicationName().equals(newRecord.getMedicationName())
+                                && existingRecord.getScheduledTime().equals(newRecord.getScheduledTime())) {
+                            isDuplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (!isDuplicate) {
+                        records.add(newRecord);
+                    }
                 }
             }
-        }
-        
-        // Limit to maximum 10 records
-        if (records.size() > 10) {
-            records = records.subList(0, 10);
-        }
-        
-        // Re-sort after any modifications
-        Collections.sort(records, new Comparator<MedicationRecord>() {
-            @Override
-            public int compare(MedicationRecord a, MedicationRecord b) {
-                return a.getScheduledTime().compareTo(b.getScheduledTime());
+
+            // Limit to maximum 10 records
+            if (records.size() > 10) {
+                records = records.subList(0, 10);
             }
-        });
-        
-    } catch (Exception e) {
-        System.err.println("Error generating medications: " + e.getMessage());
-    }
-    
-    return records;
-}
 
-private String[][] getPatientMedicationProfile(String patientId) {
-    int idHash = Math.abs(patientId.hashCode());
+            // Re-sort after any modifications
+            Collections.sort(records, new Comparator<MedicationRecord>() {
+                @Override
+                public int compare(MedicationRecord a, MedicationRecord b) {
+                    return a.getScheduledTime().compareTo(b.getScheduledTime());
+                }
+            });
 
-    switch (idHash % 5) {
-        case 0: // Morning/Evening meds
-            return new String[][]{
-                {"Ibuprofen", "400", "07:30,19:30"},
-                {"Omeprazole", "20", "07:15"},
-                {"Levothyroxine", "75", "06:45"},
-                {"Losartan", "50", "08:00"},
-                {"Furosemide", "40", "07:00"},
-                {"Metoprolol", "100", "08:15,20:15"},
-                {"Glimepiride", "1", "07:45"},
-                {"Ranitidine", "150", "21:00"}
-            };
+        } catch (Exception e) {
+            System.err.println("Error generating medications: " + e.getMessage());
+        }
 
-        case 1: // Three-times daily
-            return new String[][]{
-                {"Metformin", "500", "06:45,13:15,19:00"},
-                {"Cefuroxime", "250", "07:30,14:00,20:00"},
-                {"Paracetamol", "650", "08:00,15:00,22:00"},
-                {"Salbutamol", "4", "06:00,12:00,18:00"},
-                {"Pantoprazole", "40", "07:00"},
-                {"Aspirin", "75", "09:30"},
-                {"Telmisartan", "40", "10:00"},
-                {"Esomeprazole", "20", "07:30,19:30"}
-            };
-
-        case 2: // Four times daily
-            return new String[][]{
-                {"Amoxicillin", "500", "06:00,12:00,18:00,00:00"},
-                {"Theophylline", "200", "05:30,11:30,17:30,23:30"},
-                {"Doxycycline", "100", "08:30,14:30,20:30,02:30"},
-                {"Linezolid", "600", "06:15,12:15,18:15,00:15"},
-                {"Cetirizine", "10", "07:45"},
-                {"Ciprofloxacin", "500", "06:30,14:30,22:30"},
-                {"Famotidine", "20", "09:00,21:00"},
-                {"Budesonide", "200", "05:45,11:45,17:45,23:45"}
-            };
-
-        case 3: // Evening focused
-            return new String[][]{
-                {"Atorvastatin", "20", "21:00"},
-                {"Melatonin", "3", "22:30"},
-                {"Zolpidem", "10", "23:15"},
-                {"Clonazepam", "0.5", "21:45"},
-                {"Trazodone", "50", "22:15"},
-                {"Ramipril", "10", "20:00"},
-                {"Olmesartan", "20", "18:30"},
-                {"Hydralazine", "25", "19:30,23:00"}
-            };
-
-        default: // Morning focused
-            return new String[][]{
-                {"Lisinopril", "10", "07:00"},
-                {"Amlodipine", "5", "07:30"},
-                {"Insulin Glargine", "10", "06:00"},
-                {"Atenolol", "50", "08:30"},
-                {"Hydrochlorothiazide", "25", "09:00"},
-                {"Bisoprolol", "5", "07:15"},
-                {"Duloxetine", "30", "08:00"},
-                {"Enalapril", "10", "07:45"}
-            };
+        return records;
     }
 
+    private String[][] getPatientMedicationProfile(String patientId) {
+        int idHash = Math.abs(patientId.hashCode());
+
+        switch (idHash % 5) {
+            case 0: // Morning/Evening meds
+                return new String[][]{
+                    {"Ibuprofen", "400", "07:30,19:30"},
+                    {"Omeprazole", "20", "07:15"},
+                    {"Levothyroxine", "75", "06:45"},
+                    {"Losartan", "50", "08:00"},
+                    {"Furosemide", "40", "07:00"},
+                    {"Metoprolol", "100", "08:15,20:15"},
+                    {"Glimepiride", "1", "07:45"},
+                    {"Ranitidine", "150", "21:00"}
+                };
+
+            case 1: // Three-times daily
+                return new String[][]{
+                    {"Metformin", "500", "06:45,13:15,19:00"},
+                    {"Cefuroxime", "250", "07:30,14:00,20:00"},
+                    {"Paracetamol", "650", "08:00,15:00,22:00"},
+                    {"Salbutamol", "4", "06:00,12:00,18:00"},
+                    {"Pantoprazole", "40", "07:00"},
+                    {"Aspirin", "75", "09:30"},
+                    {"Telmisartan", "40", "10:00"},
+                    {"Esomeprazole", "20", "07:30,19:30"}
+                };
+
+            case 2: // Four times daily
+                return new String[][]{
+                    {"Amoxicillin", "500", "06:00,12:00,18:00,00:00"},
+                    {"Theophylline", "200", "05:30,11:30,17:30,23:30"},
+                    {"Doxycycline", "100", "08:30,14:30,20:30,02:30"},
+                    {"Linezolid", "600", "06:15,12:15,18:15,00:15"},
+                    {"Cetirizine", "10", "07:45"},
+                    {"Ciprofloxacin", "500", "06:30,14:30,22:30"},
+                    {"Famotidine", "20", "09:00,21:00"},
+                    {"Budesonide", "200", "05:45,11:45,17:45,23:45"}
+                };
+
+            case 3: // Evening focused
+                return new String[][]{
+                    {"Atorvastatin", "20", "21:00"},
+                    {"Melatonin", "3", "22:30"},
+                    {"Zolpidem", "10", "23:15"},
+                    {"Clonazepam", "0.5", "21:45"},
+                    {"Trazodone", "50", "22:15"},
+                    {"Ramipril", "10", "20:00"},
+                    {"Olmesartan", "20", "18:30"},
+                    {"Hydralazine", "25", "19:30,23:00"}
+                };
+
+            default: // Morning focused
+                return new String[][]{
+                    {"Lisinopril", "10", "07:00"},
+                    {"Amlodipine", "5", "07:30"},
+                    {"Insulin Glargine", "10", "06:00"},
+                    {"Atenolol", "50", "08:30"},
+                    {"Hydrochlorothiazide", "25", "09:00"},
+                    {"Bisoprolol", "5", "07:15"},
+                    {"Duloxetine", "30", "08:00"},
+                    {"Enalapril", "10", "07:45"}
+                };
+        }
 
 
     }//GEN-LAST:event_medicationBtnActionPerformed
 
     private void rehabBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rehabBtnActionPerformed
         // TODO add your handling code here:
-    String patientId = idField.getText().trim();
-    
-    if (!ValidationUtils.isValidPatientId(patientId)) {
-        log("\nError: Patient ID must be between 1-100");
-        return;
-    }
-
-    new Thread(() -> {
-        try {
-            log("\n=== Starting Rehab Session for Patient " + patientId + "===\n");
-
-            StreamObserver<ExerciseInput> requestObserver = 
-                RehabServiceGrpc.newStub(channel).liveExerciseFeedback(
-                    new StreamObserver<ExerciseFeedback>() {
-                        @Override
-                        public void onNext(ExerciseFeedback feedback) {
-                            if (feedback.getRepetitionNumber() == 0) {
-                                log("\n=== FINAL REPORT ===");
-                                log(feedback.getMessage());
-                            } else {
-                                log(String.format("[Rep %d] %s: %s", 
-                                    feedback.getRepetitionNumber(),
-                                    feedback.getSeverity().toUpperCase(),
-                                    feedback.getMessage()));
-                            }
-                        }
-
-                        @Override
-                        public void onError(Throwable t) {
-                            logClientError("Rehab Feedback", t);
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                            log("Rehab session ended");
-                        }
-                    });
-
-            String[] exercises = {"Squat", "Lunge", "Leg Raise"};
-            String exercise = exercises[new Random().nextInt(exercises.length)];
-            
-            log("Performing 10 reps of: " + exercise);
-            for (int i = 1; i <= 10; i++) {
-                double angle = 20 + new Random().nextDouble() * 30; // 20-50°
-                
-                requestObserver.onNext(ExerciseInput.newBuilder()
-                    .setPatientId(patientId)
-                    .setExerciseName(exercise)
-                    .setRepetitionNumber(i)
-                    .setPostureAngle(angle)
-                    .build());
-                
-                log("\nSent rep " + i + " - Angle: " + String.format("%.1f°", angle));
-                Thread.sleep(1000); // Realistic delay between reps
-            }
-
-            requestObserver.onCompleted();
-            Thread.sleep(500); // Wait for final report
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            logClientError("Rehab Session", e);
+        handleServiceRequest(() -> {
+        String patientId = idField.getText().trim();
+        
+        if (!ValidationUtils.isValidPatientId(patientId)) {
+            log("\nError: Patient ID must be between 1-100");
+            return;
         }
-    }).start();
+
+        new Thread(() -> {
+            try {
+                log("\n=== Starting Rehab Session ===");
+
+                StreamObserver<ExerciseInput> requestObserver = 
+                    RehabServiceGrpc.newStub(channel).liveExerciseFeedback(
+                        new StreamObserver<ExerciseFeedback>() {
+                            @Override
+                            public void onNext(ExerciseFeedback feedback) {
+                                if (feedback.getRepetitionNumber() == 0) {
+                                    log("\n=== FINAL REPORT ===");
+                                    log(feedback.getMessage());
+                                } else {
+                                    log(String.format("[Rep %d] %s: %s", 
+                                        feedback.getRepetitionNumber(),
+                                        feedback.getSeverity().toUpperCase(),
+                                        feedback.getMessage()));
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                logClientError("Rehab Feedback", t);
+                            }
+
+                            @Override
+                            public void onCompleted() {
+                                log("Rehab session ended");
+                            }
+                        });
+
+                String[] exercises = {"Squat", "Lunge", "Leg Raise"};
+                String exercise = exercises[new Random().nextInt(exercises.length)];
+                
+                log("Performing 10 reps of: " + exercise);
+                for (int i = 1; i <= 10; i++) {
+                    double angle = 20 + new Random().nextDouble() * 30; // 20-50°
+                    
+                    requestObserver.onNext(ExerciseInput.newBuilder()
+                        .setPatientId(patientId)
+                        .setExerciseName(exercise)
+                        .setRepetitionNumber(i)
+                        .setPostureAngle(angle)
+                        .build());
+                    
+                    log("Sent rep " + i + " - Angle: " + String.format("%.1f°", angle));
+                    Thread.sleep(1000);
+                }
+
+                requestObserver.onCompleted();
+                Thread.sleep(500); // Wait for final report
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                logClientError("Rehab Session", e);
+            } finally {
+                setServiceRunning(false);
+            }
+        }).start();
+    });
     }//GEN-LAST:event_rehabBtnActionPerformed
 
     /**
@@ -628,14 +690,13 @@ private String[][] getPatientMedicationProfile(String patientId) {
             }
         });
     }
-    
 
-private String getCurrentTimestamp() {
-    return java.time.LocalDateTime.now()
-        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-}
+    private String getCurrentTimestamp() {
+        return java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
 
- @Override
+    @Override
     public void dispose() {
         if (channel != null) {
             channel.shutdown();
