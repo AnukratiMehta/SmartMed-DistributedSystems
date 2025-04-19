@@ -1,52 +1,222 @@
-Apr 18, 2025 7:52:07 PM distsys.smartmed.server.SmartMedServer configureLogging
+Apr 18, 2025 11:25:11 PM distsys.smartmed.server.SmartMedServer configureLogging
 INFO: Logging configured successfully
-Apr 18, 2025 7:52:08 PM distsys.smartmed.server.SmartMedServer start
+Apr 18, 2025 11:25:12 PM distsys.smartmed.server.SmartMedServer start
 INFO: Server started on port 50051
-Apr 18, 2025 7:52:11 PM distsys.smartmed.common.LoggingUtils logServiceStart
+Apr 18, 2025 11:25:13 PM distsys.smartmed.common.LoggingUtils logServiceStart
 INFO: [AuthService] Starting for patient User: admin
-Apr 18, 2025 7:52:11 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+Apr 18, 2025 11:25:13 PM distsys.smartmed.common.LoggingUtils logServiceEnd
 INFO: [AuthService] Completed for patient User: admin (Login succeeded)
-Apr 18, 2025 7:52:18 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+Apr 18, 2025 11:25:18 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
 INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
-Apr 18, 2025 7:52:18 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [PatientService] Starting for patient 32
-Apr 18, 2025 7:52:18 PM distsys.smartmed.common.LoggingUtils logServiceEnd
-INFO: [PatientService] Completed for patient 32 (Record fetched)
-Apr 18, 2025 7:52:26 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
-INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
-Apr 18, 2025 7:52:26 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [PatientService] Starting for patient 34
-Apr 18, 2025 7:52:26 PM distsys.smartmed.common.LoggingUtils logServiceEnd
-INFO: [PatientService] Completed for patient 34 (Record fetched)
-Apr 18, 2025 7:52:31 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
-INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
-Apr 18, 2025 7:52:31 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [PatientService] Starting for patient 30
-Apr 18, 2025 7:52:31 PM distsys.smartmed.common.LoggingUtils logServiceEnd
-INFO: [PatientService] Completed for patient 30 (Record fetched)
-Apr 18, 2025 10:32:17 PM distsys.smartmed.common.LoggingUtils logServiceStart
+Apr 18, 2025 11:25:18 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 33
+Apr 18, 2025 11:25:18 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 33 (Record fetched)
+Apr 18, 2025 11:25:19 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 18, 2025 11:25:19 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 33
+Apr 18, 2025 11:25:31 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 18, 2025 11:25:31 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [RehabService] Starting for patient 33
+Apr 18, 2025 11:25:41 PM distsys.smartmed.server.RehabServiceImpl$1 onCompleted
+INFO: Session completed for 33: Completed 10 reps of Lunge.
+Good posture: 40.0% (4/10)
+Apr 18, 2025 11:25:45 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 18, 2025 11:25:45 PM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 33
+Apr 18, 2025 11:25:55 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 33 (Stream completed)
+Apr 19, 2025 12:07:46 AM distsys.smartmed.common.LoggingUtils logServiceStart
 INFO: [AuthService] Starting for patient User: admin
-Apr 18, 2025 10:32:17 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+Apr 19, 2025 12:07:46 AM distsys.smartmed.common.LoggingUtils logServiceEnd
 INFO: [AuthService] Completed for patient User: admin (Login succeeded)
-Apr 18, 2025 10:34:20 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [AuthService] Starting for patient User: admin
-Apr 18, 2025 10:34:20 PM distsys.smartmed.common.LoggingUtils logServiceEnd
-INFO: [AuthService] Completed for patient User: admin (Login succeeded)
-Apr 18, 2025 10:34:30 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+Apr 19, 2025 12:13:29 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
 INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
-Apr 18, 2025 10:34:30 PM distsys.smartmed.common.LoggingUtils logServiceStart
+Apr 19, 2025 12:13:29 AM distsys.smartmed.common.LoggingUtils logServiceStart
 INFO: [PatientService] Starting for patient 42
-Apr 18, 2025 10:34:30 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+Apr 19, 2025 12:13:29 AM distsys.smartmed.common.LoggingUtils logServiceEnd
 INFO: [PatientService] Completed for patient 42 (Record fetched)
-Apr 18, 2025 10:34:31 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+Apr 19, 2025 12:14:36 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:14:36 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 43
+Apr 19, 2025 12:14:36 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 43 (Record fetched)
+Apr 19, 2025 12:14:43 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:14:43 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 42
+Apr 19, 2025 12:14:43 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 42 (Record fetched)
+Apr 19, 2025 12:15:13 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:15:13 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 42
+Apr 19, 2025 12:15:23 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 42 (Stream completed)
+Apr 19, 2025 12:15:53 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
 INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
-Apr 18, 2025 10:34:31 PM distsys.smartmed.common.LoggingUtils logServiceStart
+Apr 19, 2025 12:15:53 AM distsys.smartmed.common.LoggingUtils logServiceStart
 INFO: [MedicationService] Starting for patient 42
-Apr 18, 2025 10:37:03 PM distsys.smartmed.common.LoggingUtils logServiceStart
+Apr 19, 2025 12:20:35 AM distsys.smartmed.common.LoggingUtils logServiceStart
 INFO: [AuthService] Starting for patient User: admin
-Apr 18, 2025 10:37:03 PM distsys.smartmed.common.LoggingUtils logServiceEnd
+Apr 19, 2025 12:20:35 AM distsys.smartmed.common.LoggingUtils logServiceEnd
 INFO: [AuthService] Completed for patient User: admin (Login succeeded)
-Apr 18, 2025 10:37:10 PM distsys.smartmed.security.JwtServerInterceptor interceptCall
+Apr 19, 2025 12:21:26 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:21:26 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 42
+Apr 19, 2025 12:21:26 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 42 (Record fetched)
+Apr 19, 2025 12:23:37 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 19, 2025 12:23:37 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 19, 2025 12:25:01 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:25:01 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 56
+Apr 19, 2025 12:25:01 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 56 (Record fetched)
+Apr 19, 2025 12:25:56 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:25:56 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 56
+Apr 19, 2025 12:26:06 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 56 (Stream completed)
+Apr 19, 2025 12:27:00 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:27:00 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 56
+Apr 19, 2025 12:27:10 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 56 (Stream completed)
+Apr 19, 2025 12:27:35 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:27:35 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 56
+Apr 19, 2025 12:27:35 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 56 (Record fetched)
+Apr 19, 2025 12:27:39 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:27:39 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 56
+Apr 19, 2025 12:27:49 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 56 (Stream completed)
+Apr 19, 2025 12:27:56 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
 INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
-Apr 18, 2025 10:37:10 PM distsys.smartmed.common.LoggingUtils logServiceStart
-INFO: [MedicationService] Starting for patient 22
+Apr 19, 2025 12:27:56 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 56
+Apr 19, 2025 12:28:47 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 19, 2025 12:28:47 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 50
+Apr 19, 2025 12:28:52 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 19, 2025 12:28:52 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 59
+Apr 19, 2025 12:30:14 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 19, 2025 12:30:14 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [RehabService] Starting for patient 59
+Apr 19, 2025 12:30:24 AM distsys.smartmed.server.RehabServiceImpl$1 onCompleted
+INFO: Session completed for 59: Completed 10 reps of Squat.
+Good posture: 30.0% (3/10)
+Apr 19, 2025 12:31:18 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:31:18 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 59
+Apr 19, 2025 12:31:28 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 59 (Stream completed)
+Apr 19, 2025 12:32:28 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 19, 2025 12:32:28 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 19, 2025 12:32:28 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: wrong
+Apr 19, 2025 12:32:28 AM distsys.smartmed.common.LoggingUtils logError
+WARNING: [AuthService] Error for patient User: wrong: Invalid credentials for user: wrong
+Apr 19, 2025 12:35:32 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 19, 2025 12:35:32 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 59
+Apr 19, 2025 12:39:10 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 19, 2025 12:39:10 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 19, 2025 12:42:34 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:42:34 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 89
+Apr 19, 2025 12:42:34 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 89 (Record fetched)
+Apr 19, 2025 12:43:47 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:43:47 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 89
+Apr 19, 2025 12:43:57 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 89 (Stream completed)
+Apr 19, 2025 12:44:42 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:44:42 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 90
+Apr 19, 2025 12:44:52 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 90 (Stream completed)
+Apr 19, 2025 12:45:09 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 19, 2025 12:45:09 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 90
+Apr 19, 2025 12:47:10 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 19, 2025 12:47:10 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [RehabService] Starting for patient 90
+Apr 19, 2025 12:47:20 AM distsys.smartmed.server.RehabServiceImpl$1 onCompleted
+INFO: Session completed for 90: Completed 10 reps of Leg Raise.
+Good posture: 60.0% (6/10)
+Apr 19, 2025 12:49:57 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 19, 2025 12:49:57 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 19, 2025 12:49:57 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: wrong
+Apr 19, 2025 12:49:57 AM distsys.smartmed.common.LoggingUtils logError
+WARNING: [AuthService] Error for patient User: wrong: Invalid credentials for user: wrong
+Apr 19, 2025 12:53:34 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [AuthService] Starting for patient User: admin
+Apr 19, 2025 12:53:34 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [AuthService] Completed for patient User: admin (Login succeeded)
+Apr 19, 2025 12:55:28 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:55:28 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 99
+Apr 19, 2025 12:55:28 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 99 (Record fetched)
+Apr 19, 2025 12:55:42 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.PatientService/GetPatientRecord by admin
+Apr 19, 2025 12:55:42 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [PatientService] Starting for patient 99
+Apr 19, 2025 12:55:42 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [PatientService] Completed for patient 99 (Record fetched)
+Apr 19, 2025 12:56:31 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MonitoringService/StreamVitals by admin
+Apr 19, 2025 12:56:31 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MonitoringService] Starting for patient 99
+Apr 19, 2025 12:56:41 AM distsys.smartmed.common.LoggingUtils logServiceEnd
+INFO: [MonitoringService] Completed for patient 99 (Stream completed)
+Apr 19, 2025 12:57:29 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 19, 2025 12:57:29 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 99
+Apr 19, 2025 12:59:11 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.MedicationService/AnalyzeMedicationSchedule by admin
+Apr 19, 2025 12:59:11 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [MedicationService] Starting for patient 65
+Apr 19, 2025 12:59:22 AM distsys.smartmed.security.JwtServerInterceptor interceptCall
+INFO: Authenticated access to healthcare.RehabService/LiveExerciseFeedback by admin
+Apr 19, 2025 12:59:22 AM distsys.smartmed.common.LoggingUtils logServiceStart
+INFO: [RehabService] Starting for patient 65
+Apr 19, 2025 12:59:32 AM distsys.smartmed.server.RehabServiceImpl$1 onCompleted
+INFO: Session completed for 65: Completed 10 reps of Squat.
+Good posture: 50.0% (5/10)
